@@ -60,8 +60,14 @@ class NexusOrchestrator:
 
     async def dispatch(self, agent_id: str, payload: Any) -> AsyncIterator[AgentEvent]:
         agent = self.agents[agent_id]
+        timeout = self.config.agent_timeout_seconds
         try:
-            async for event in agent.run(payload):
+            agen = agent.run(payload)
+            while True:
+                try:
+                    event = await asyncio.wait_for(agen.__anext__(), timeout=timeout)
+                except StopAsyncIteration:
+                    break
                 yield event
         except asyncio.TimeoutError:
             yield AgentEvent(type="AGENT_ERROR", agent_id=agent_id, data="timeout")

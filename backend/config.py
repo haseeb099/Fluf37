@@ -1,6 +1,6 @@
 """Nexus configuration via pydantic-settings."""
 from functools import lru_cache
-from typing import List
+from typing import List, Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,6 +21,24 @@ class NexusConfig(BaseSettings):
     agent_timeout_seconds: int = 30
 
     jwt_secret: str = Field(default="change-me", alias="JWT_SECRET")
+    jwt_expire_minutes: int = Field(default=60, alias="JWT_EXPIRE_MINUTES")
+    auth_mode: Literal["api_key_only", "jwt_optional", "jwt_required"] = Field(
+        default="jwt_optional", alias="AUTH_MODE"
+    )
+    nexus_ws_require_auth: bool = Field(default=False, alias="NEXUS_WS_REQUIRE_AUTH")
+    rate_limit_per_minute: int = Field(default=60, alias="NEXUS_RATE_LIMIT_PER_MINUTE")
+    rate_limit_demo_per_minute: int = Field(default=600, alias="NEXUS_RATE_LIMIT_DEMO_PER_MINUTE")
+
+    plaid_client_id: str = Field(default="", alias="PLAID_CLIENT_ID")
+    plaid_secret: str = Field(default="", alias="PLAID_SECRET")
+    plaid_env: str = Field(default="sandbox", alias="PLAID_ENV")
+    alpaca_api_key: str = Field(default="", alias="ALPACA_API_KEY")
+    alpaca_secret_key: str = Field(default="", alias="ALPACA_SECRET_KEY")
+    alpaca_base_url: str = Field(
+        default="https://paper-api.alpaca.markets", alias="ALPACA_BASE_URL"
+    )
+    llm_provider: Literal["anthropic", "openai"] = Field(default="anthropic", alias="LLM_PROVIDER")
+
     cors_origins: str = Field(
         default="http://localhost:3000,http://127.0.0.1:3000", alias="CORS_ORIGINS"
     )
@@ -62,6 +80,23 @@ class NexusConfig(BaseSettings):
 
     def get_ingest_secret(self, source: str) -> str:
         return getattr(self, f"ingest_hmac_secret_{source}", "demo-secret")
+
+    def get_rate_limit(self) -> str:
+        limit = self.rate_limit_demo_per_minute if self.is_demo() else self.rate_limit_per_minute
+        return f"{limit}/minute"
+
+    def plaid_configured(self) -> bool:
+        return bool(self.plaid_client_id and self.plaid_secret)
+
+    def alpaca_configured(self) -> bool:
+        return bool(self.alpaca_api_key and self.alpaca_secret_key)
+
+    def llm_configured(self) -> bool:
+        if self.is_demo():
+            return False
+        if self.llm_provider == "anthropic":
+            return bool(self.anthropic_api_key and self.anthropic_api_key != "demo")
+        return bool(self.openai_api_key and self.openai_api_key != "demo")
 
 
 @lru_cache

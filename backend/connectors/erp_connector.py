@@ -2,7 +2,14 @@ from datetime import datetime
 from typing import Any, Dict
 
 from backend.connectors.base import BaseConnector
-from backend.schemas.models import ConnectionStatus, ERPRecord, ERPVendor, GLSnapshot, SourceData, VendorPayment
+from backend.schemas.models import (
+    ConnectionStatus,
+    ERPRecord,
+    ERPVendor,
+    GLSnapshot,
+    SourceData,
+    VendorPayment,
+)
 from backend.utils.synthetic_data import get_demo_erp
 
 

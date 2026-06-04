@@ -1,0 +1,9 @@
+---
+description: Use Context7 MCP for library docs when implementing Nexus features
+globs:
+  - backend/**/*
+  - frontend/**/*
+  - tests/**/*
+---
+
+When generating or changing code that depends on external libraries (FastAPI, Pydantic, Next.js, Chroma, LangChain, Anthropic/OpenAI SDKs, SlowAPI, python-jose, etc.), use the **Context7** MCP tools to fetch current documentation before proposing APIs or config. Do not guess deprecated method signatures.

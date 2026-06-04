@@ -5,9 +5,9 @@ from typing import AsyncIterator, List, Optional
 import structlog
 
 from backend.config import NexusConfig, get_config
+from backend.schemas.models import AuditEntry
 from backend.utils.audit_log import AuditLog
 from backend.utils.errors import LLMError
-from backend.schemas.models import AuditEntry
 
 logger = structlog.get_logger()
 
@@ -27,13 +27,77 @@ class LLMClient:
     ) -> AsyncIterator[str]:
         if self.config.is_demo():
             demo_text = self._demo_response(agent_id, prompt)
-            for i in range(0, len(demo_text), self.config.max_tokens_per_agent // 50 or 20):
-                chunk = demo_text[i : i + 20]
-                yield chunk
-                await asyncio.sleep(0.01)
+            chunk_size = self.config.max_tokens_per_agent // 50 or 20
+            step = min(40, max(20, chunk_size))
+            for i in range(0, len(demo_text), step):
+                yield demo_text[i : i + step]
+                await asyncio.sleep(0.002)
             self._audit(agent_id, len(demo_text))
             return
-        raise LLMError("Live LLM not configured; set NEXUS_DEMO_MODE=true", model=self.config.primary_model)
+
+        if not self.config.llm_configured():
+            raise LLMError(
+                "Live LLM not configured; set API keys or NEXUS_DEMO_MODE=true",
+                model=self.config.primary_model,
+            )
+
+        async for token in self._stream_live(
+            prompt, system, temperature, max_tokens, agent_id
+        ):
+            yield token
+
+    async def _stream_live(
+        self,
+        prompt: str,
+        system: str,
+        temperature: float,
+        max_tokens: int,
+        agent_id: str,
+    ) -> AsyncIterator[str]:
+        model = self.config.primary_model
+        collected: List[str] = []
+        try:
+            if self.config.llm_provider == "openai":
+                from openai import AsyncOpenAI
+
+                client = AsyncOpenAI(api_key=self.config.openai_api_key)
+                stream = await client.chat.completions.create(
+                    model=self.config.fallback_model,
+                    messages=[
+                        {"role": "system", "content": system or "You are Nexus AI."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    stream=True,
+                    timeout=self.config.agent_timeout_seconds,
+                )
+                async for chunk in stream:
+                    delta = chunk.choices[0].delta.content or ""
+                    if delta:
+                        collected.append(delta)
+                        yield delta
+                model = self.config.fallback_model
+            else:
+                from anthropic import AsyncAnthropic
+
+                client = AsyncAnthropic(api_key=self.config.anthropic_api_key)
+                async with client.messages.stream(
+                    model=self.config.primary_model,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    system=system or "You are Nexus AI.",
+                    messages=[{"role": "user", "content": prompt}],
+                    timeout=self.config.agent_timeout_seconds,
+                ) as stream:
+                    async for text in stream.text_stream:
+                        collected.append(text)
+                        yield text
+        except Exception as e:
+            logger.warning("llm_live_failed", agent_id=agent_id, error=str(e))
+            raise LLMError(str(e), model=model) from e
+
+        self._audit(agent_id, sum(len(t) for t in collected), model=model)
 
     async def complete(
         self,
@@ -58,14 +122,14 @@ class LLMClient:
         }
         return responses.get(agent_id, f"Demo analysis for {agent_id}.")
 
-    def _audit(self, agent_id: str, tokens: int) -> None:
+    def _audit(self, agent_id: str, tokens: int, model: str = "demo") -> None:
         self.audit.write(
             AuditEntry(
                 agent_id=agent_id,
                 action="llm_complete",
-                payload_preview="demo",
+                payload_preview="demo" if model == "demo" else "live",
                 tokens=tokens,
                 latency_ms=50,
-                model="demo",
+                model=model,
             )
         )

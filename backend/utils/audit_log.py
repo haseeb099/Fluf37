@@ -45,10 +45,9 @@ class AuditLog:
                 if not line.strip():
                     continue
                 record = json.loads(line)
-                entry_json = json.dumps(
-                    {k: v for k, v in record.items() if k not in ("hash", "prev_hash")},
-                    default=str,
-                )
+                entry_fields = {k: v for k, v in record.items() if k not in ("hash", "prev_hash")}
+                entry = AuditEntry.model_validate(entry_fields)
+                entry_json = entry.model_dump_json()
                 expected = hashlib.sha256((entry_json + prev).encode()).hexdigest()
                 if record.get("hash") != expected:
                     return AuditVerification(valid=False, entries_checked=count, first_invalid_index=i)

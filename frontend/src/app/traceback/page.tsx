@@ -1,40 +1,62 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ReactFlowProvider } from "reactflow";
+import { FailureTimeline } from "@/components/traceback/FailureTimeline";
+import { TraceGraph } from "@/components/traceback/TraceGraph";
+import type { GraphEdgeData, GraphNodeData } from "@/types/graph";
 import { getMemoryGraph } from "@/lib/api";
 
 export default function TracebackPage() {
-  const [graph, setGraph] = useState<{ nodes: { id: string; type?: string }[]; edges: unknown[] }>({
-    nodes: [],
-    edges: [],
-  });
+  const [nodes, setNodes] = useState<GraphNodeData[]>([]);
+  const [edges, setEdges] = useState<GraphEdgeData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     getMemoryGraph()
-      .then((g) =>
-        setGraph({
-          nodes: (g.nodes || []) as { id: string; type?: string }[],
-          edges: g.edges || [],
-        })
-      )
-      .catch(() => setGraph({ nodes: [], edges: [] }));
+      .then((g) => {
+        setNodes((g.nodes || []) as GraphNodeData[]);
+        setEdges((g.edges || []) as GraphEdgeData[]);
+      })
+      .catch((e) => {
+        setNodes([]);
+        setEdges([]);
+        setError(e instanceof Error ? e.message : "Failed to load graph");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-semibold text-cyan-300">Traceback Graph</h2>
-      <div className="glass-panel p-4 min-h-[400px]">
-        <div className="grid gap-2">
-          {graph.nodes.map((n) => (
-            <div key={n.id} className="flex items-center gap-2 text-sm border-l-2 border-purple-500 pl-3">
-              <span className="text-purple-400">{n.type || "node"}</span>
-              <span>{n.id}</span>
-            </div>
-          ))}
-        </div>
-        {graph.nodes.length === 0 && <p className="text-slate-500">No graph data. Start backend with demo memory seeded.</p>}
-        <p className="text-xs text-slate-600 mt-4">{graph.edges.length} edges · React Flow layout in production build</p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-semibold text-cyan-300">Traceback Graph</h2>
+        <p className="text-slate-400 text-sm mt-1">
+          Historical failure paths and loss events from graph memory. Click a node for details.
+        </p>
       </div>
+
+      {loading && <p className="text-slate-500 text-sm">Loading graph…</p>}
+      {error && (
+        <p className="text-red-400 text-sm" role="alert">
+          {error}
+        </p>
+      )}
+
+      {!loading && !error && (
+        <ReactFlowProvider>
+          <TraceGraph nodes={nodes} edges={edges} highlightId={highlightId} />
+          <FailureTimeline nodes={nodes} highlightId={highlightId} onHover={setHighlightId} />
+          <p className="text-xs text-slate-600">
+            {nodes.length} nodes · {edges.length} edges
+            {edges[0]?.probability != null &&
+              ` · top path confidence ${Math.round((edges[0].probability ?? 0) * 100)}%`}
+          </p>
+        </ReactFlowProvider>
+      )}
     </div>
   );
 }

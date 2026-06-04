@@ -18,6 +18,9 @@ export type PipelineState =
   | "COMPLETE"
   | "ERROR";
 
+/** WebSocket AUTH handshake — not a pipeline phase. */
+export type WsAuthStatus = "pending" | "authenticated" | "failed";
+
 export type SourceType = "crm" | "erp" | "bank" | "trading" | "news" | "custom";
 
 export interface ConnectionStatus {

@@ -6,15 +6,15 @@ from typing import Any, Dict, List
 from backend.schemas.models import (
     BankTransaction,
     CRMDeal,
+    EquityHolder,
     ERPRecord,
     ERPVendor,
-    EquityHolder,
+    FailureRecord,
     GLSnapshot,
     NewsItem,
     SourceData,
     TradingPosition,
     VendorPayment,
-    FailureRecord,
 )
 
 DEMO_DIR = Path("data/demo")

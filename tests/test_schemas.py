@@ -1,5 +1,4 @@
-import pytest
-from backend.schemas.models import SignalWeights, SourceData
+from backend.schemas.models import SignalWeights
 from backend.utils.synthetic_data import get_demo_source_data
 
 

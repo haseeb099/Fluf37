@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from backend.agents.base import AgentState, BaseAgent
 from backend.integration.connection_manager import ConnectionManager
-from backend.schemas.models import AgentEvent, ConnectorOutput
+from backend.schemas.models import AgentEvent
 
 
 class ConnectorAgent(BaseAgent):

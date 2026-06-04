@@ -1,13 +1,18 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
-from backend.auth.deps import get_current_tenant, require_api_key
-from backend.schemas.models import RunPipelineRequest
+from backend.auth.deps import AuthContext, get_current_tenant, require_auth
+from backend.rate_limit import limiter
 
 router = APIRouter(prefix="/api/v1/nexus", tags=["Nexus"])
 
 
 @router.post("/run/demo")
-async def run_demo(tenant: str = Depends(get_current_tenant), _: str = Depends(require_api_key)):
+@limiter.limit("30/minute")
+async def run_demo(
+    request: Request,
+    tenant: str = Depends(get_current_tenant),
+    _auth: AuthContext = Depends(require_auth),
+):
     from backend.main import get_orchestrator
     orch = get_orchestrator(tenant)
     events = []
@@ -17,7 +22,11 @@ async def run_demo(tenant: str = Depends(get_current_tenant), _: str = Depends(r
 
 
 @router.get("/status")
-async def pipeline_status(tenant: str = Depends(get_current_tenant), _: str = Depends(require_api_key)):
+async def pipeline_status(
+    request: Request,
+    tenant: str = Depends(get_current_tenant),
+    _auth: AuthContext = Depends(require_auth),
+):
     from backend.main import get_orchestrator
     orch = get_orchestrator(tenant)
     return {"pipeline_state": orch.pipeline_state, "context_keys": list(orch.context.keys())}

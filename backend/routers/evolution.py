@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends
 
-from backend.auth.deps import require_api_key, require_role
+from backend.auth.deps import AuthContext, require_auth, require_role
 from backend.schemas.models import EvolutionCycle
 
 router = APIRouter(prefix="/api/v1/evolution", tags=["Evolution"])
 
 
 @router.get("/report")
-async def evolution_report(_: str = Depends(require_api_key)):
-    from backend.agents.evolution import EvolutionAgent, EvolutionInput
+async def evolution_report(_auth: AuthContext = Depends(require_auth)):
+    from backend.agents.evolution import EvolutionInput
     from backend.main import get_orchestrator
     orch = get_orchestrator()
     agent = orch.agents["evolution"]
@@ -22,7 +22,7 @@ async def evolution_report(_: str = Depends(require_api_key)):
 @router.post("/approve/{cycle_id}")
 async def approve_evolution(
     cycle_id: str,
-    _: str = Depends(require_api_key),
+    _auth: AuthContext = Depends(require_auth),
     __: str = Depends(require_role("admin")),
 ):
     from backend.main import get_memory

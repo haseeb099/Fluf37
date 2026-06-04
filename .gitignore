@@ -13,6 +13,8 @@ data/audit.jsonl
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+frontend/.env.local
+frontend/tsconfig.tsbuildinfo
 *.egg-info/
 dist/
 build/

@@ -1,9 +1,10 @@
 """Evolution agent — weekly self-improvement."""
 from typing import AsyncIterator
 
+from pydantic import BaseModel
+
 from backend.agents.base import AgentState, BaseAgent
 from backend.schemas.models import AgentEvent, EvolutionReport
-from pydantic import BaseModel
 
 
 class EvolutionInput(BaseModel):

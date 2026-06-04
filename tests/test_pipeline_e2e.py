@@ -23,7 +23,12 @@ async def test_full_pipeline_demo():
     assert "connector" in completes
     assert "silent_finder" in completes
     assert "adversarial" in completes
+    assert "traceback" in completes
+    assert "decision" in completes
+    assert "evolution" in completes
+    assert orch.pipeline_state == "COMPLETE"
     report = orch.aggregate_results()
     assert report.silent_finder is not None
     assert len(report.silent_finder.blind_spots) >= 3
     assert len(report.adversarial.attacks) >= 3
+    assert len(report.decisions) >= 1

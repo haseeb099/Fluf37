@@ -1,5 +1,23 @@
 import { create } from "zustand";
-import type { AgentId, BlindSpot, DecisionOutput, PipelineState, WSEvent } from "@/types/nexus";
+import type { ParsedWSEvent } from "@/lib/wsSchema";
+import type { BlindSpot, DecisionOutput, PipelineState, WsAuthStatus } from "@/types/nexus";
+
+const PIPELINE_STATES: PipelineState[] = [
+  "IDLE",
+  "CONNECTING",
+  "CONNECTED",
+  "ANALYZING",
+  "ATTACKING",
+  "TRACING",
+  "DECIDING",
+  "EVOLVING",
+  "COMPLETE",
+  "ERROR",
+];
+
+function isPipelineState(value: string): value is PipelineState {
+  return (PIPELINE_STATES as string[]).includes(value);
+}
 
 interface NexusStore {
   pipelineState: PipelineState;
@@ -8,21 +26,36 @@ interface NexusStore {
   blindSpots: BlindSpot[];
   decisions: DecisionOutput[];
   isConnected: boolean;
+  wsAuthStatus: WsAuthStatus;
+  lastError: string | null;
   startPipeline: () => void;
-  handleWSEvent: (event: WSEvent) => void;
+  handleWSEvent: (event: ParsedWSEvent) => void;
   resetPipeline: () => void;
   setConnected: (v: boolean) => void;
+  setWsAuthStatus: (status: WsAuthStatus) => void;
+  setLastError: (msg: string | null) => void;
+  clearError: () => void;
 }
 
-export const useNexusStore = create<NexusStore>((set, get) => ({
+export const useNexusStore = create<NexusStore>((set) => ({
   pipelineState: "IDLE",
   agentTokens: {},
   agentOutputs: {},
   blindSpots: [],
   decisions: [],
   isConnected: false,
-  startPipeline: () => set({ pipelineState: "CONNECTING", agentTokens: {}, agentOutputs: {} }),
-  setConnected: (v) => set({ isConnected: v }),
+  wsAuthStatus: "pending",
+  lastError: null,
+  startPipeline: () =>
+    set({ pipelineState: "CONNECTING", agentTokens: {}, agentOutputs: {}, lastError: null }),
+  setConnected: (v) =>
+    set({
+      isConnected: v,
+      wsAuthStatus: v ? useNexusStore.getState().wsAuthStatus : "pending",
+    }),
+  setWsAuthStatus: (status) => set({ wsAuthStatus: status }),
+  setLastError: (msg) => set({ lastError: msg }),
+  clearError: () => set({ lastError: null }),
   resetPipeline: () =>
     set({
       pipelineState: "IDLE",
@@ -30,11 +63,40 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       agentOutputs: {},
       blindSpots: [],
       decisions: [],
+      lastError: null,
     }),
   handleWSEvent: (event) => {
+    if (event.type === "AGENT_ERROR") {
+      if (event.agent_id === "system" && event.data === "invalid_token") {
+        set({ wsAuthStatus: "failed", lastError: "WebSocket authentication failed" });
+        return;
+      }
+      const msg =
+        typeof event.data === "string"
+          ? event.data
+          : JSON.stringify(event.data ?? "Agent error");
+      set({ lastError: msg, pipelineState: "ERROR" });
+      return;
+    }
     if (event.type === "PIPELINE_STATE" && typeof event.data === "object" && event.data !== null) {
-      const state = (event.data as { state?: PipelineState }).state;
-      if (state) set({ pipelineState: state });
+      const state = (event.data as { state?: string }).state;
+      if (!state) return;
+      if (state === "AUTHENTICATED") {
+        set({ wsAuthStatus: "authenticated" });
+        return;
+      }
+      if (isPipelineState(state)) {
+        set({ pipelineState: state });
+        if (state === "ERROR") {
+          set({ lastError: "Pipeline entered error state" });
+        }
+        if (state === "COMPLETE") {
+          const report = (event.data as { report?: { decisions?: DecisionOutput[] } }).report;
+          if (report?.decisions?.length) {
+            set({ decisions: report.decisions });
+          }
+        }
+      }
     }
     if (event.type === "AGENT_TOKEN" && typeof event.data === "string") {
       const id = event.agent_id;

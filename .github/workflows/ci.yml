@@ -10,6 +10,7 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements.txt
       - run: python scripts/generate_demo_data.py --seed 42
+      - run: ruff check backend tests
       - run: pytest tests/ -q --tb=short
   frontend:
     runs-on: ubuntu-latest
@@ -18,4 +19,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: cd frontend && npm ci && npm run type-check
+      - run: cd frontend && npm ci && npm run type-check && npm run lint && npm run build

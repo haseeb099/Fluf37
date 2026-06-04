@@ -1,5 +1,5 @@
 """Memory layer facade."""
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel
 
@@ -7,7 +7,7 @@ from backend.config import NexusConfig
 from backend.memory.graph import NexusGraph
 from backend.memory.timeseries import TimeSeriesMemory
 from backend.memory.vector import VectorMemory
-from backend.schemas.models import DecisionOutput, MemoryMetadata, MemoryResult, MemoryStats
+from backend.schemas.models import MemoryMetadata, MemoryResult, MemoryStats
 from backend.utils.synthetic_data import get_demo_failures
 
 

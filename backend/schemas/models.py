@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # --- Enums as Literals ---
 SourceType = Literal["crm", "erp", "bank", "trading", "news", "custom", "webhook"]
@@ -351,6 +351,7 @@ class OutcomeRequest(BaseModel):
 
 
 class WSClientMessage(BaseModel):
-    type: Literal["RUN_PIPELINE", "RUN_AGENT", "PING", "RESET"]
+    type: Literal["RUN_PIPELINE", "RUN_AGENT", "PING", "RESET", "AUTH"]
     mode: Optional[Literal["demo", "live"]] = "demo"
     agent_id: Optional[str] = None
+    token: Optional[str] = None

@@ -2,9 +2,11 @@ import hashlib
 import hmac
 import json
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
+from backend.auth.deps import AuthContext, require_auth
 from backend.config import get_config
+from backend.rate_limit import limiter
 from backend.schemas.models import SourceType
 
 router = APIRouter(prefix="/ingest", tags=["Ingest"])
@@ -16,9 +18,11 @@ def _verify_hmac(body: bytes, signature: str, secret: str) -> bool:
 
 
 @router.post("/{source}")
+@limiter.limit("30/minute")
 async def ingest_webhook(
     source: SourceType,
     request: Request,
+    _auth: AuthContext = Depends(require_auth),
     x_nexus_signature: str = Header(None, alias="X-Nexus-Signature"),
     x_nexus_tenant_id: str = Header("default", alias="X-Nexus-Tenant-Id"),
 ):
@@ -28,9 +32,11 @@ async def ingest_webhook(
     if not config.is_demo() and not _verify_hmac(body, x_nexus_signature or "", secret):
         raise HTTPException(status_code=401, detail="Invalid signature")
     payload = json.loads(body) if body else {}
-    from backend.connectors.webhook_connector import WebhookConnector
     from backend.main import get_connection_manager
-    conn = WebhookConnector(config, x_nexus_tenant_id, source_type=source)
-    conn.ingest(payload)
-    partial = conn.normalize(payload)
-    return {"ingested": source, "records": len(partial.bank) + len(partial.crm)}
+
+    mgr = get_connection_manager(x_nexus_tenant_id)
+    partial = await mgr.ingest_webhook(source, payload)
+    return {
+        "ingested": source,
+        "records": len(partial.bank) + len(partial.crm) + len(partial.trading),
+    }

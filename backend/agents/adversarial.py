@@ -17,13 +17,21 @@ class AdversarialRedTeam(BaseAgent):
         attacks = []
         library = self._load_library()
 
-        for bs in payload.blind_spots:
+        if self.config.is_demo():
             async for event in self._stream_llm(
-                f"Generate attack for blind spot: {bs.title}",
+                "Generate adversarial attacks for all detected blind spots.",
                 system="You are a red team analyst exploiting detection gaps.",
                 temperature=0.7,
             ):
                 yield event
+        for bs in payload.blind_spots:
+            if not self.config.is_demo():
+                async for event in self._stream_llm(
+                    f"Generate attack for blind spot: {bs.title}",
+                    system="You are a red team analyst exploiting detection gaps.",
+                    temperature=0.7,
+                ):
+                    yield event
             atk = self._build_attack(bs, library)
             attacks.append(atk)
 

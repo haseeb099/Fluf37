@@ -9,12 +9,31 @@ const SOURCES: SourceType[] = ["crm", "erp", "bank", "trading", "news"];
 export default function ConnectionsPage() {
   const [sources, setSources] = useState<ConnectionStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [busySource, setBusySource] = useState<string | null>(null);
 
   const refresh = () => {
     getSourcesStatus()
       .then((d) => setSources((d.sources || []) as ConnectionStatus[]))
       .catch(() => setSources(SOURCES.map((s) => ({ source_type: s, state: "disconnected" }))))
       .finally(() => setLoading(false));
+  };
+
+  const runAction = async (source: SourceType, action: "connect" | "sync") => {
+    setActionError(null);
+    setBusySource(source);
+    try {
+      if (action === "connect") {
+        await connectSource(source);
+      } else {
+        await syncSource(source);
+      }
+      refresh();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : `${action} failed`);
+    } finally {
+      setBusySource(null);
+    }
   };
 
   useEffect(() => {
@@ -25,6 +44,15 @@ export default function ConnectionsPage() {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold text-cyan-300">Data Connections</h2>
       <p className="text-slate-400 text-sm">CRM · ERP · Banking · Trading · News</p>
+      {actionError && (
+        <p className="text-sm text-red-400 break-words" role="alert">
+          {actionError}
+        </p>
+      )}
+      <p className="text-xs text-slate-600">
+        Connect requires admin role (set header <code className="text-slate-500">X-Nexus-Role: admin</code> on
+        token requests for local demos).
+      </p>
       {loading ? (
         <p className="text-slate-500">Loading...</p>
       ) : (
@@ -42,17 +70,19 @@ export default function ConnectionsPage() {
                 <div className="flex gap-2 mt-4">
                   <button
                     type="button"
-                    onClick={() => connectSource(st).then(refresh)}
-                    className="text-xs px-2 py-1 rounded border border-cyan-600/50 hover:bg-cyan-900/30"
+                    disabled={busySource === st}
+                    onClick={() => runAction(st, "connect")}
+                    className="text-xs px-2 py-1 rounded border border-cyan-600/50 hover:bg-cyan-900/30 disabled:opacity-50"
                   >
-                    Connect
+                    {busySource === st ? "…" : "Connect"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => syncSource(st).then(refresh)}
-                    className="text-xs px-2 py-1 rounded border border-slate-600 hover:bg-slate-800"
+                    disabled={busySource === st}
+                    onClick={() => runAction(st, "sync")}
+                    className="text-xs px-2 py-1 rounded border border-slate-600 hover:bg-slate-800 disabled:opacity-50"
                   >
-                    Sync
+                    {busySource === st ? "…" : "Sync"}
                   </button>
                 </div>
               </div>

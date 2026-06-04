@@ -1,31 +1,53 @@
 """Nexus AI FastAPI application."""
 import json
 from contextlib import asynccontextmanager
-from typing import Dict
+from typing import Dict, Optional
 
 import structlog
-from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from backend.agents.orchestrator import NexusOrchestrator, WebSocketManager
-from backend.auth.deps import require_api_key
+from backend.auth.jwt import decode_access_token
+from backend.auth.token_router import router as auth_router
 from backend.config import get_config
 from backend.integration.connection_manager import ConnectionManager
 from backend.integration.credential_store import CredentialStore
 from backend.memory.layer import MemoryLayer
+from backend.rate_limit import limiter
 from backend.routers import audit, decisions, evolution, ingest, memory, nexus, sources
 from backend.schemas.models import WSClientMessage
-from backend.utils.audit_log import AuditLog
 from backend.utils.llm_client import LLMClient
 
 logger = structlog.get_logger()
 
+# Per-tenant orchestrators share one MemoryLayer today (Scale: per-tenant DB/pgvector).
 _memory: MemoryLayer | None = None
 _orchestrators: Dict[str, NexusOrchestrator] = {}
 _connection_managers: Dict[str, ConnectionManager] = {}
 _ws_manager = WebSocketManager()
 _credentials = CredentialStore()
 _ready = False
+
+
+config = get_config()
+
+
+def _ws_auth_required() -> bool:
+    return config.nexus_ws_require_auth or (
+        config.auth_mode == "jwt_required" and not config.is_demo()
+    )
+
+
+def _authenticate_ws_token(token: Optional[str]) -> bool:
+    if not token:
+        return False
+    if token == config.nexus_api_key:
+        return True
+    return decode_access_token(config, token) is not None
 
 
 @asynccontextmanager
@@ -49,7 +71,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Nexus AI", version="1.0.0", lifespan=lifespan)
-config = get_config()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.get_cors_origins(),
@@ -58,6 +83,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(nexus.router)
 app.include_router(sources.router)
 app.include_router(memory.router)
@@ -91,7 +117,11 @@ def get_orchestrator(tenant_id: str = "default") -> NexusOrchestrator:
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "demo_mode": config.is_demo()}
+    agent_states = {}
+    orch = _orchestrators.get("default")
+    if _ready and orch is not None:
+        agent_states = {aid: agent.state.value for aid, agent in orch.agents.items()}
+    return {"status": "ok", "demo_mode": config.is_demo(), "agents": agent_states}
 
 
 @app.get("/ready")
@@ -110,14 +140,40 @@ async def ready():
 async def websocket_stream(websocket: WebSocket):
     await websocket.accept()
     _ws_manager.connections.append(websocket)
+    ws_authenticated = not _ws_auth_required()
+    query_token = websocket.query_params.get("token")
+    if query_token and _authenticate_ws_token(query_token):
+        ws_authenticated = True
     try:
         while True:
             raw = await websocket.receive_text()
             msg = WSClientMessage.model_validate(json.loads(raw))
+            if msg.type == "AUTH":
+                if _authenticate_ws_token(msg.token):
+                    ws_authenticated = True
+                    await websocket.send_json({
+                        "type": "PIPELINE_STATE",
+                        "agent_id": "system",
+                        "data": {"state": "AUTHENTICATED"},
+                    })
+                else:
+                    await websocket.send_json({
+                        "type": "AGENT_ERROR",
+                        "agent_id": "system",
+                        "data": "invalid_token",
+                    })
+                continue
             if msg.type == "PING":
                 await websocket.send_json({"type": "PONG", "agent_id": "system", "data": {}})
                 continue
             if msg.type == "RUN_PIPELINE":
+                if _ws_auth_required() and not ws_authenticated:
+                    await websocket.send_json({
+                        "type": "AGENT_ERROR",
+                        "agent_id": "orchestrator",
+                        "data": "authentication_required",
+                    })
+                    continue
                 orch = get_orchestrator()
                 async for event in orch.run_pipeline(mode=msg.mode or "demo"):
                     await websocket.send_json(event.model_dump(mode="json"))

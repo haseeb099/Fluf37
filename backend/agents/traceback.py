@@ -19,8 +19,17 @@ class TracebackAgent(BaseAgent):
         self._set_state(AgentState.RUNNING)
         yield self._emit("AGENT_START", {})
         tracebacks = []
+        max_attacks = 1 if self.config.is_demo() else min(3, self.config.traceback_max_results)
+        attacks = payload.attacks[:max_attacks]
 
-        for attack in payload.attacks[:3]:
+        if self.config.is_demo():
+            async for event in self._stream_llm(
+                "Synthesize tracebacks linking historical failures to current attack patterns.",
+                system="Connect historical failures to current attack patterns.",
+            ):
+                yield event
+
+        for attack in attacks:
             similar = await self.memory.search(attack.name, n=3)
             failures = [
                 FailureRecord(
@@ -35,11 +44,12 @@ class TracebackAgent(BaseAgent):
             path = ["fail_001", "loss_event_001"] if failures else []
             blast = list(self.memory.get_graph().get_blast_radius("fail_001"))
 
-            async for event in self._stream_llm(
-                f"Synthesize traceback for attack {attack.name}",
-                system="Connect historical failures to current attack patterns.",
-            ):
-                yield event
+            if not self.config.is_demo():
+                async for event in self._stream_llm(
+                    f"Synthesize traceback for attack {attack.name}",
+                    system="Connect historical failures to current attack patterns.",
+                ):
+                    yield event
 
             tracebacks.append(TracebackResult(
                 similar_failures=failures,

@@ -1,5 +1,7 @@
 # Nexus AI — Connector & Plugin API
 
+> **Implementation status (June 2026):** Demo JSON + normalization **shipped**. Live vendor calls are **stubs or empty** unless `NEXUS_DEMO_MODE=true` and demo files are used. Plaid/Alpaca have stub clients in `backend/connectors/live/`. `CONNECTOR_PLUGINS` env loading is **roadmap** — not in `config.py` yet.
+
 ## Supported source types
 
 | `source_type` | Built-in adapter | Demo data | Live (feature flag) |

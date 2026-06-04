@@ -61,16 +61,35 @@ class VectorMemory:
                 return out
             except Exception as e:
                 logger.warning("chroma_search_failed", error=str(e))
-        # In-memory: simple substring match for demo
-        matches = [d for d in self._docs if query.lower()[:20] in d["text"].lower() or True]
+        # In-memory: deterministic substring + token overlap (demo)
+        def _overlap_score(q: str, text: str) -> float:
+            ql = q.lower().strip()
+            tl = text.lower()
+            if not ql:
+                return 0.0
+            prefix = ql[:20]
+            if prefix in tl or ql in tl:
+                return 1.0
+            q_tokens = {t for t in ql.split() if t}
+            if not q_tokens:
+                return 0.0
+            t_tokens = set(tl.split())
+            return len(q_tokens & t_tokens) / len(q_tokens)
+
+        ranked = sorted(
+            self._docs,
+            key=lambda d: _overlap_score(query, d["text"]),
+            reverse=True,
+        )
+        matches = [d for d in ranked if _overlap_score(query, d["text"]) > 0][:n_results]
         return [
             MemoryResult(
                 id=d["id"],
                 text=d["text"],
-                score=0.85,
+                score=round(_overlap_score(query, d["text"]), 2),
                 metadata=MemoryMetadata(agent_id=d["metadata"].get("agent_id", "traceback")),
             )
-            for d in matches[:n_results]
+            for d in matches
         ]
 
     async def get_stats(self) -> int:

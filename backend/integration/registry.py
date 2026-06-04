@@ -2,8 +2,8 @@
 from typing import Dict, List, Type
 
 from backend.config import NexusConfig
-from backend.connectors.base import BaseConnector
 from backend.connectors.bank_connector import BankConnector
+from backend.connectors.base import BaseConnector
 from backend.connectors.crm_connector import CRMConnector
 from backend.connectors.custom_rest_connector import CustomRESTConnector
 from backend.connectors.erp_connector import ERPConnector

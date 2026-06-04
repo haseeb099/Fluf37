@@ -1,6 +1,6 @@
 from backend.integration.normalizer import merge_source_data
-from backend.utils.synthetic_data import get_demo_bank, get_demo_crm, get_demo_erp
 from backend.schemas.models import SourceData
+from backend.utils.synthetic_data import get_demo_bank, get_demo_crm, get_demo_erp
 
 
 def test_merge_source_data():

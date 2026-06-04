@@ -8,8 +8,13 @@ import structlog
 from backend.config import NexusConfig
 from backend.integration.normalizer import merge_source_data
 from backend.integration.registry import ConnectorRegistry
-from backend.schemas.models import ConnectionStatus, ConnectorOutput, SourceData, SyncResult, SourceType
-from backend.utils.errors import ConnectorError
+from backend.schemas.models import (
+    ConnectionStatus,
+    ConnectorOutput,
+    SourceData,
+    SourceType,
+    SyncResult,
+)
 
 logger = structlog.get_logger()
 
@@ -90,6 +95,18 @@ class ConnectionManager:
             connections=connections,
             sync_results=sync_results,
         )
+
+    async def ingest_webhook(self, source_type: SourceType, payload: dict) -> SourceData:
+        from backend.connectors.webhook_connector import WebhookConnector
+
+        conn = self._connectors.get(source_type)
+        if not isinstance(conn, WebhookConnector):
+            conn = WebhookConnector(self.config, self.tenant_id, source_type=source_type)
+            await conn.connect()
+            self._connectors[source_type] = conn
+        conn.ingest(payload)
+        raw = await conn.fetch_batch()
+        return conn.normalize(raw)
 
     def get_all_status(self) -> List[ConnectionStatus]:
         statuses = []
