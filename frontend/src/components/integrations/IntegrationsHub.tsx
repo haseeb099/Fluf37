@@ -85,7 +85,7 @@ export function IntegrationsHub() {
             Plugins & data sources
           </h1>
           <p className="text-muted text-sm mt-2 max-w-2xl">
-            Connect official Nexus connectors or register your own webhook integration. One catalog for
+            Connect official Fluf37 connectors or register your own webhook integration. One catalog for
             your CFO risk-review pipeline.
           </p>
         </div>

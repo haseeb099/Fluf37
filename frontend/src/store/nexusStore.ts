@@ -26,6 +26,7 @@ interface NexusStore {
   agentOutputs: Record<string, unknown>;
   blindSpots: BlindSpot[];
   decisions: DecisionOutput[];
+  correlationId: string | null;
   isConnected: boolean;
   wsAuthStatus: WsAuthStatus;
   lastError: string | null;
@@ -44,11 +45,18 @@ export const useNexusStore = create<NexusStore>((set) => ({
   agentOutputs: {},
   blindSpots: [],
   decisions: [],
+  correlationId: null,
   isConnected: false,
   wsAuthStatus: "pending",
   lastError: null,
   startPipeline: () =>
-    set({ pipelineState: "CONNECTING", agentTokens: {}, agentOutputs: {}, lastError: null }),
+    set({
+      pipelineState: "CONNECTING",
+      agentTokens: {},
+      agentOutputs: {},
+      lastError: null,
+      correlationId: null,
+    }),
   setConnected: (v) =>
     set({
       isConnected: v,
@@ -64,6 +72,7 @@ export const useNexusStore = create<NexusStore>((set) => ({
       agentOutputs: {},
       blindSpots: [],
       decisions: [],
+      correlationId: null,
       lastError: null,
     }),
   handleWSEvent: (event) => {
@@ -76,7 +85,12 @@ export const useNexusStore = create<NexusStore>((set) => ({
       return;
     }
     if (event.type === "PIPELINE_STATE" && typeof event.data === "object" && event.data !== null) {
-      const state = (event.data as { state?: string }).state;
+      const payload = event.data as { state?: string; correlation_id?: string };
+      const corr = payload.correlation_id;
+      if (corr) {
+        set({ correlationId: corr });
+      }
+      const state = payload.state;
       if (!state) return;
       if (state === "AUTHENTICATED") {
         set({ wsAuthStatus: "authenticated" });

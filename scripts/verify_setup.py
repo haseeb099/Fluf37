@@ -2,6 +2,7 @@
 """Validate a clean-clone dev environment before demo or CI."""
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import sys
 from pathlib import Path
@@ -46,17 +47,62 @@ def _check_imports() -> list[str]:
     return errors
 
 
+def _check_pilot_profile() -> list[str]:
+    """Fail if default secrets or demo-trust settings remain (customer pilot deploy)."""
+    errors: list[str] = []
+    sys.path.insert(0, str(ROOT))
+    try:
+        from backend.config import NexusConfig
+
+        cfg = NexusConfig()
+    except Exception as exc:
+        return [f"Could not load NexusConfig: {exc}"]
+
+    if cfg.nexus_api_key == "demo-key":
+        errors.append("Rotate NEXUS_API_KEY — still using demo-key")
+    weak_jwt = cfg.jwt_secret in ("change-me", "change-me-in-production", "")
+    if weak_jwt or len(cfg.jwt_secret) < 32:
+        errors.append("Rotate JWT_SECRET to a unique value (min 32 characters)")
+    if not cfg.nexus_pre_live_mode:
+        errors.append("Set NEXUS_PRE_LIVE_MODE=true for paid pilot")
+    if cfg.auth_mode != "jwt_required":
+        errors.append("Set AUTH_MODE=jwt_required for paid pilot")
+    if not cfg.nexus_ws_require_auth:
+        errors.append("Set NEXUS_WS_REQUIRE_AUTH=true for paid pilot")
+    if cfg.trust_client_role():
+        errors.append("Set NEXUS_TRUST_CLIENT_ROLE=false for paid pilot")
+    return errors
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Validate Nexus AI environment")
+    parser.add_argument(
+        "--pilot",
+        action="store_true",
+        help="Enforce paid-pilot security profile (rotated secrets, pre-live auth)",
+    )
+    args = parser.parse_args()
+
     print("Nexus AI setup verification")
     print(f"  root: {ROOT}")
     print(f"  python: {sys.version.split()[0]}")
+    if args.pilot:
+        print("  mode: pilot profile check")
+
     errors = _check_python() + _check_files() + _check_imports()
+    if args.pilot:
+        errors += _check_pilot_profile()
+
     if errors:
         print("\nFAILED:")
         for e in errors:
             print(f"  - {e}")
+        if args.pilot:
+            print("\nSee docs/pilot.env.example and docs/MARKET_READY.md")
         return 1
     print("\nOK — environment looks ready for pytest and uvicorn.")
+    if args.pilot:
+        print("OK — pilot security profile checks passed.")
     return 0
 
 

@@ -59,3 +59,15 @@ async def test_viewer_cannot_sync():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.post("/api/v1/connect/crm/sync", headers=headers)
         assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_viewer_cannot_submit_decision_outcome():
+    headers = {**API_HEADERS, "X-Nexus-Role": "viewer"}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.post(
+            "/api/v1/decisions/dec_demo/outcome",
+            headers=headers,
+            json={"outcome": "correct"},
+        )
+        assert r.status_code == 403

@@ -49,6 +49,17 @@ def _authenticate_ws_token(token: Optional[str]) -> bool:
     return decode_access_token(cfg, token) is not None
 
 
+def _resolve_ws_tenant(token: Optional[str]) -> str:
+    """Map WS auth token to tenant id (JWT sub). API-key auth uses default."""
+    if not token:
+        return "default"
+    cfg = get_config()
+    claims = decode_access_token(cfg, token)
+    if claims and claims.get("sub"):
+        return str(claims["sub"])
+    return "default"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _memory, _ready
@@ -69,7 +80,7 @@ async def lifespan(app: FastAPI):
     _ready = False
 
 
-app = FastAPI(title="Nexus AI", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Fluf37", version="1.0.0", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -159,9 +170,11 @@ async def websocket_stream(websocket: WebSocket):
     await websocket.accept()
     _ws_manager.connections.append(websocket)
     ws_authenticated = not _ws_auth_required()
+    ws_tenant_id = "default"
     query_token = websocket.query_params.get("token")
     if query_token and _authenticate_ws_token(query_token):
         ws_authenticated = True
+        ws_tenant_id = _resolve_ws_tenant(query_token)
     try:
         while True:
             raw = await websocket.receive_text()
@@ -169,6 +182,7 @@ async def websocket_stream(websocket: WebSocket):
             if msg.type == "AUTH":
                 if _authenticate_ws_token(msg.token):
                     ws_authenticated = True
+                    ws_tenant_id = _resolve_ws_tenant(msg.token)
                     await websocket.send_json({
                         "type": "PIPELINE_STATE",
                         "agent_id": "system",
@@ -192,8 +206,8 @@ async def websocket_stream(websocket: WebSocket):
                         "data": "authentication_required",
                     })
                     continue
-                orch = get_orchestrator()
-                async for event in orch.run_pipeline(mode=msg.mode or "demo", tenant_id="default"):
+                orch = get_orchestrator(ws_tenant_id)
+                async for event in orch.run_pipeline(mode=msg.mode or "demo", tenant_id=ws_tenant_id):
                     await websocket.send_json(event.model_dump(mode="json"))
                 report = orch.aggregate_results()
                 await websocket.send_json({
@@ -202,7 +216,7 @@ async def websocket_stream(websocket: WebSocket):
                     "data": {"state": "COMPLETE", "report": report.model_dump(mode="json")},
                 })
             elif msg.type == "RESET":
-                orch = get_orchestrator()
+                orch = get_orchestrator(ws_tenant_id)
                 orch.context.clear()
                 orch.pipeline_state = "IDLE"
     except WebSocketDisconnect:

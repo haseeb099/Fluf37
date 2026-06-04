@@ -11,9 +11,9 @@ interface AppShellProps {
 export function AppShell({ title, subtitle, children }: AppShellProps) {
   return (
     <div className="max-w-7xl mx-auto w-full">
-      <header className="mb-6 pb-4 border-b border-border/60">
-        <h2 className="text-lg font-semibold text-slate-200">{title}</h2>
-        {subtitle && <p className="text-sm text-muted mt-1">{subtitle}</p>}
+      <header className="mb-8 pb-5 border-b border-border/60">
+        <h2 className="text-xl font-semibold text-slate-100 tracking-tight">{title}</h2>
+        {subtitle && <p className="text-sm text-muted mt-1.5 max-w-3xl leading-relaxed">{subtitle}</p>}
       </header>
       {children}
     </div>

@@ -4,31 +4,34 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import {
-  Bot,
+  FileText,
   GitBranch,
   LayoutDashboard,
   Play,
   Plug,
   Scale,
   Sparkles,
+  Zap,
 } from "lucide-react";
+import { PRODUCT_NAME, PRODUCT_WEDGE } from "@/lib/brand";
 import { useNexusStore } from "@/store/nexusStore";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { fetchAuthToken } from "@/lib/api";
-import { useHealthStatus } from "@/hooks/useHealthStatus";
 import { useNexusWs } from "@/providers/NexusWebSocketProvider";
 
 const NAV = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/", label: "Risk review", icon: LayoutDashboard },
   { href: "/integrations", label: "Integrations", icon: Plug },
-  { href: "/agents", label: "Agent activity", icon: Bot },
   { href: "/traceback", label: "Traceback", icon: GitBranch },
   { href: "/decisions", label: "Decisions", icon: Scale },
 ];
 
-const ADVANCED = [{ href: "/evolution", label: "Evolution", icon: Sparkles }];
+const ADVANCED = [
+  { href: "/agents", label: "Review transcript", icon: FileText },
+  { href: "/evolution", label: "Evolution", icon: Sparkles },
+];
 
 const showAdvanced = process.env.NEXT_PUBLIC_SHOW_ADVANCED === "true";
 
@@ -38,9 +41,7 @@ export function Sidebar() {
   const pipelineState = useNexusStore((s) => s.pipelineState);
   const wsAuthStatus = useNexusStore((s) => s.wsAuthStatus);
   const busy = pipelineState !== "IDLE" && pipelineState !== "COMPLETE" && pipelineState !== "ERROR";
-  const health = useHealthStatus();
-  const llmMode = health?.llm_mode ?? null;
-  const onDashboard = pathname === "/";
+  const onRiskReview = pathname === "/";
 
   useEffect(() => {
     fetchAuthToken("viewer").catch(() => undefined);
@@ -53,16 +54,21 @@ export function Sidebar() {
     >
       <div className="p-5 border-b border-border space-y-4">
         <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-500/30 to-sky-600/10 border border-sky-500/30 flex items-center justify-center shadow-glow">
-            <Sparkles className="h-4 w-4 text-sky-300" />
+          <div className="brand-mark h-10 w-10 rounded-xl flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold tracking-tight bg-gradient-to-br from-sky-300 to-emerald-400 bg-clip-text text-transparent">
+              F37
+            </span>
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-100 tracking-tight">Nexus AI</h1>
-            <p className="text-[10px] text-muted leading-tight">Financial intelligence</p>
+            <h1 className="text-base font-bold text-slate-100 tracking-tight">{PRODUCT_NAME}</h1>
+            <p className="text-[10px] text-muted leading-tight flex items-center gap-1">
+              <Zap className="h-2.5 w-2.5 text-sky-400" />
+              {PRODUCT_WEDGE}
+            </p>
           </div>
         </div>
 
-        {!onDashboard && (
+        {!onRiskReview && (
           <Button
             variant="primary"
             size="lg"
@@ -75,16 +81,9 @@ export function Sidebar() {
           </Button>
         )}
 
-        <div className="flex flex-wrap gap-1.5">
-          {llmMode && (
-            <Badge variant={llmMode === "live" ? "success" : "warning"}>
-              LLM {llmMode}
-            </Badge>
-          )}
-          <Badge variant={isConnected ? "success" : "critical"}>
-            {isConnected ? "WS ok" : "WS off"}
-          </Badge>
-        </div>
+        <Badge variant={isConnected ? "success" : "critical"}>
+          {isConnected ? "Stream connected" : "Stream disconnected"}
+        </Badge>
       </div>
 
       <nav className="flex-1 p-3 space-y-0.5">

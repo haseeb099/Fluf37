@@ -17,8 +17,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus AI",
-  description: "Multi-agent financial intelligence",
+  title: "Fluf37 — Pre-release risk review",
+  description:
+    "Auditable multi-agent financial intelligence — blind spots, adversarial stress tests, traceback, and audit trail.",
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: ["/icon.svg"],
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.variable} ${jetbrainsMono.variable} flex min-h-screen font-sans`}>
         <NexusWebSocketProvider>
           <Sidebar />
-          <main className="flex-1 p-6 md:p-8 overflow-auto bg-void">{children}</main>
+          <main className="flex-1 p-6 md:p-8 overflow-auto bg-void main-canvas">{children}</main>
         </NexusWebSocketProvider>
       </body>
     </html>

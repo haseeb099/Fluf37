@@ -68,7 +68,7 @@ class LLMClient:
         stream = await client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": system or "You are Nexus AI."},
+                {"role": "system", "content": system or "You are Fluf37."},
                 {"role": "user", "content": prompt},
             ],
             temperature=temperature,
@@ -118,7 +118,7 @@ class LLMClient:
                     model=model,
                     max_tokens=max_tokens,
                     temperature=temperature,
-                    system=system or "You are Nexus AI.",
+                    system=system or "You are Fluf37.",
                     messages=[{"role": "user", "content": prompt}],
                     timeout=self.config.agent_timeout_seconds,
                 ) as stream:
@@ -171,7 +171,7 @@ class LLMClient:
         try:
             parts: List[str] = []
             async for token in self._stream_live(
-                "Reply with exactly: Nexus AI connected.",
+                "Reply with exactly: Fluf37 connected.",
                 "You are a connectivity probe. Reply briefly.",
                 0,
                 32,

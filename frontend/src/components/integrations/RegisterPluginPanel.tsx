@@ -65,7 +65,7 @@ export function RegisterPluginPanel({
               Add your integration
             </CardTitle>
             <CardDescription>
-              Register a webhook or REST bridge. No code deploy required — your team pushes signed JSON to Nexus.
+              Register a webhook or REST bridge. No code deploy required — your team pushes signed JSON to Fluf37.
             </CardDescription>
           </div>
           {onClose && (

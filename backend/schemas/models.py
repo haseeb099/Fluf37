@@ -341,7 +341,7 @@ class RiskReviewReport(BaseModel):
 
 
 class PlatformInfo(BaseModel):
-    product_name: str = "Nexus AI"
+    product_name: str = "Fluf37"
     product_wedge: str = "Pre-Release Risk Review"
     icp: str = ""
     deployment_mode: DeploymentMode = "demo"

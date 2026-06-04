@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.auth.deps import AuthContext, require_auth
+from backend.auth.deps import AuthContext, Role, require_auth, require_role
 from backend.schemas.models import OutcomeRequest
 
 router = APIRouter(prefix="/api/v1/decisions", tags=["Decisions"])
@@ -23,7 +23,12 @@ async def get_decision(decision_id: str, _auth: AuthContext = Depends(require_au
 
 
 @router.post("/{decision_id}/outcome")
-async def submit_outcome(decision_id: str, body: OutcomeRequest, _auth: AuthContext = Depends(require_auth)):
+async def submit_outcome(
+    decision_id: str,
+    body: OutcomeRequest,
+    _auth: AuthContext = Depends(require_auth),
+    __: Role = Depends(require_role("analyst")),
+):
     from backend.main import get_memory
     await get_memory().timeseries.update_decision_outcome(decision_id, body.outcome)
     return {"updated": decision_id, "outcome": body.outcome}

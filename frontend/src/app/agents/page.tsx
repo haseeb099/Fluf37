@@ -15,8 +15,8 @@ export default function AgentsPage() {
 
   return (
     <AppShell
-      title="Agent activity"
-      subtitle="Live streaming output from each agent in the six-stage risk review pipeline."
+      title="Review transcript"
+      subtitle="Detailed streaming output from the risk review pipeline — for audit and engineering review."
     >
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-wrap items-center gap-2">
@@ -29,8 +29,8 @@ export default function AgentsPage() {
         </div>
 
         <p className="text-sm text-muted max-w-2xl">
-          Run a risk review from the Overview page to populate agent narratives. Each card shows the
-          latest tokens streamed from that agent over WebSocket.
+          Run a risk review from the Risk review page to populate transcripts. Each card shows tokens
+          streamed during the review (advanced — not required for sign-off).
         </p>
 
         <AgentGrid />

@@ -81,7 +81,7 @@ def build_platform_info(config: NexusConfig) -> PlatformInfo:
         for spec in list_builtin_capabilities(config)
     }
     return PlatformInfo(
-        product_name="Nexus AI",
+        product_name="Fluf37",
         product_wedge="Pre-Release Risk Review",
         icp="Mid-market B2B CFO office ($50M–$300M revenue)",
         deployment_mode=mode,

@@ -244,12 +244,12 @@ Production checklist: [deployment.md](deployment.md).
 
 | Route | Purpose |
 |-------|---------|
-| `/` | **Overview** — hero risk-review CTA, KPIs, platform status, workflow, findings |
+| `/` | **Risk review** — hero CTA, first-run checklist, KPIs, export, findings |
 | `/integrations` | Plugin hub — official connectors + community registration (`/connections` redirects here) |
-| `/agents` | Agent activity grid — live streamed narratives per agent |
 | `/traceback` | React Flow: named failures → realized losses + timeline |
-| `/decisions` | Loan + trade cards, outcome feedback |
-| `/evolution` | WoW score, proposed rules (approval gate) |
+| `/decisions` | Loan + trade cards, outcome feedback (analyst+ to submit) |
+| `/agents` | **Advanced only** — review transcript (hidden unless `NEXT_PUBLIC_SHOW_ADVANCED=true`) |
+| `/evolution` | **Advanced only** — WoW score (hidden by default) |
 
 **Key frontend modules:** `RiskReviewHero`, `NexusWebSocketProvider` (single WS connection), `IntegrationsHub`, shared UI primitives under `frontend/src/components/ui/`.
 
@@ -350,6 +350,7 @@ Roadmap detail: [roadmap.md](roadmap.md).
 
 | Document | Use when |
 |----------|----------|
+| **[MARKET_READY.md](MARKET_READY.md)** | **Product/GTM north star — ICP, pilot, verdict** |
 | [README.md](../README.md) | Developer quick start |
 | [architecture.md](architecture.md) | System design deep dive |
 | [agents.md](agents.md) | Per-agent contracts |

@@ -55,10 +55,15 @@ export function FindingsPanel({ blindSpots }: { blindSpots: BlindSpot[] }) {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-100">
-          Risk findings
-          <span className="text-muted font-normal ml-2">({blindSpots.length})</span>
-        </h3>
+        <div>
+          <h3 className="text-lg font-semibold text-slate-100">
+            Risk findings
+            <span className="text-muted font-normal ml-2">({blindSpots.length})</span>
+          </h3>
+          <p className="text-xs text-muted mt-1">
+            Cross-source blind spots surfaced and stress-tested by the pipeline
+          </p>
+        </div>
       </div>
       <div className="space-y-2">
         {blindSpots.map((bs) => (
@@ -67,8 +72,7 @@ export function FindingsPanel({ blindSpots }: { blindSpots: BlindSpot[] }) {
         {blindSpots.length === 0 && (
           <Card className="p-8 text-center">
             <p className="text-muted text-sm">
-              No findings yet. Run a pre-release risk review from the sidebar to analyze cross-source
-              blind spots.
+              No findings yet. Run a pre-release risk review to analyze cross-source blind spots.
             </p>
           </Card>
         )}
