@@ -1,6 +1,5 @@
-from starlette.testclient import TestClient
-
 from backend.main import app
+from starlette.testclient import TestClient
 
 
 def test_run_demo_endpoint_completes():
