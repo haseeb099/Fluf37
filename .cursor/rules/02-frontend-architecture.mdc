@@ -1,0 +1,31 @@
+---
+description: Frontend architecture rules
+globs:
+  - "frontend/**/*.ts"
+  - "frontend/**/*.tsx"
+  - "app/**/*.ts"
+  - "app/**/*.tsx"
+  - "components/**/*.tsx"
+---
+
+# Frontend stack
+- Next.js App Router
+- TypeScript strict mode
+- Tailwind CSS
+- shadcn/ui
+- Zustand
+- TanStack Query
+- Zod
+- WebSocket client
+
+# Frontend conventions
+- Build reusable components.
+- Keep state normalized.
+- Use typed hooks for streaming data.
+- Render agent outputs progressively.
+- Match the dark precision design system.
+
+# UI rules
+- Include loading, error, reconnect, and empty states.
+- Validate all incoming messages.
+- Keep dashboard cards visually consistent.

@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "generated_at": "2026-05-01T00:00:00",
+  "attacks": [
+    {
+      "id": "lib_atk_001",
+      "name": "3-Hop Circular Payment Loop",
+      "type": "fraud",
+      "description": "Route funds through 3 entities",
+      "success_rate_historical": 0.89,
+      "detection_difficulty": "high",
+      "proposed_defense": "Graph traversal within 7 hops"
+    }
+  ]
+}

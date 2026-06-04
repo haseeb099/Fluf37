@@ -1,0 +1,74 @@
+{
+  "deals": [
+    {
+      "id": "deal_001",
+      "company": "Acme Corp",
+      "contact_name": "James Chen",
+      "contact_role": "CFO",
+      "deal_value": 450000,
+      "stage": "contract_sent",
+      "payment_terms_days": 90,
+      "expected_close": "2026-05-16T00:00:00Z",
+      "equity_holders": [
+        {
+          "name": "James Chen",
+          "equity_pct": 40.0
+        },
+        {
+          "name": "Sarah Williams",
+          "equity_pct": 25.0
+        }
+      ],
+      "notes": "Large deal, expedited review requested by CFO",
+      "is_at_risk": true,
+      "risk_reason": "Payment terms misalignment with cash flow"
+    },
+    {
+      "id": "deal_002",
+      "company": "Beta Industries",
+      "contact_name": "Maria Santos",
+      "contact_role": "Procurement",
+      "deal_value": 125000,
+      "stage": "negotiation",
+      "payment_terms_days": 30,
+      "expected_close": "2026-05-06T00:00:00Z",
+      "equity_holders": [],
+      "notes": "Standard deal, no issues",
+      "is_at_risk": false,
+      "risk_reason": null
+    },
+    {
+      "id": "deal_005",
+      "company": "Epsilon Tech",
+      "contact_name": "James Chen",
+      "contact_role": "Board Advisor",
+      "deal_value": 230000,
+      "stage": "proposal_sent",
+      "payment_terms_days": 60,
+      "expected_close": "2026-05-21T00:00:00Z",
+      "equity_holders": [
+        {
+          "name": "James Chen",
+          "equity_pct": 12.5
+        }
+      ],
+      "notes": "Referred by Acme Corp",
+      "is_at_risk": true,
+      "risk_reason": "Concentration risk: same key person as Acme deal"
+    }
+  ],
+  "contacts": [
+    {
+      "id": "c_001",
+      "name": "James Chen",
+      "email": "j.chen@acmecorp.com",
+      "companies": [
+        "Acme Corp",
+        "Epsilon Tech"
+      ],
+      "equity_exposure": 52.5
+    }
+  ],
+  "generated_at": "2026-05-01T00:00:00",
+  "seed": 42
+}

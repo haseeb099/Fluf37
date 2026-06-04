@@ -1,0 +1,5 @@
+from backend.connectors.bank_connector import BankConnector
+from backend.connectors.crm_connector import CRMConnector
+from backend.connectors.erp_connector import ERPConnector
+from backend.connectors.news_connector import NewsConnector
+from backend.connectors.trading_connector import TradingConnector

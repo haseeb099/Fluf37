@@ -1,0 +1,26 @@
+---
+description: Memory, graph, and evolution layer rules
+globs:
+  - "memory/**/*.py"
+  - "graph/**/*.py"
+  - "evolution/**/*.py"
+  - "backend/memory/**/*.py"
+---
+
+# Memory rules
+- Vector memory stores semantic failure patterns and outcomes.
+- Graph memory stores relationships and blast radius.
+- Time-series storage tracks decisions and evolution cycles.
+- Deduplicate near-identical records.
+- Keep memory explainable and auditable.
+
+# Graph rules
+- Use clear node and edge types.
+- Preserve timestamps and metadata.
+- Keep traversal deterministic where possible.
+- Do not store PII in embeddings.
+
+# Evolution rules
+- Human approval is required before applying updates.
+- Weight changes must be explicit.
+- Evolution reports must be human-readable.

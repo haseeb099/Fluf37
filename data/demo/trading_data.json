@@ -1,0 +1,23 @@
+{
+  "positions": [
+    {
+      "ticker": "ACME",
+      "qty": 5000,
+      "entry_price": 142.5,
+      "current_price": 138.2,
+      "pnl": -21500,
+      "order_book_imbalance": -0.32,
+      "rsi": 32,
+      "macd_signal": -0.8,
+      "volume_20d_avg": 850000,
+      "volume_today": 2100000,
+      "pre_earnings": false
+    }
+  ],
+  "market_data": {
+    "date": "2026-05-01T00:00:00",
+    "vix": 18.5
+  },
+  "generated_at": "2026-05-01T00:00:00",
+  "seed": 42
+}

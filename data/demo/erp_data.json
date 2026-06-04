@@ -1,0 +1,52 @@
+{
+  "vendors": [
+    {
+      "id": "vendor_001",
+      "name": "Supplier X Ltd",
+      "crm_entity_id": "deal_001",
+      "total_paid_ytd": 285000,
+      "pct_of_total_spend": 0.34,
+      "payment_terms_days": 30,
+      "linked_bank_entity": "ext_supplier_x"
+    },
+    {
+      "id": "vendor_002",
+      "name": "Nexus Holdings LLC",
+      "crm_entity_id": null,
+      "total_paid_ytd": 335000,
+      "pct_of_total_spend": 0.41,
+      "payment_terms_days": 0,
+      "linked_bank_entity": "ext_shell_001",
+      "incorporated_days_ago": 3
+    }
+  ],
+  "gl_snapshots": [
+    {
+      "id": "gl_001",
+      "account": "cash_operating",
+      "balance": 1250000,
+      "as_of": "2026-05-01T00:00:00Z",
+      "projected_30d_outflow": 195000,
+      "projected_30d_inflow": 67000,
+      "notes": "30-day cash gap aligns with Acme 90-day terms"
+    }
+  ],
+  "vendor_payments": [
+    {
+      "id": "vp_001",
+      "vendor_id": "vendor_001",
+      "amount": 85000,
+      "timestamp": "2026-04-16T00:00:00Z",
+      "crm_deal_id": "deal_001"
+    },
+    {
+      "id": "vp_002",
+      "vendor_id": "vendor_002",
+      "amount": 250000,
+      "timestamp": "2026-04-29T00:00:00Z",
+      "crm_deal_id": null
+    }
+  ],
+  "generated_at": "2026-05-01T00:00:00",
+  "seed": 42
+}

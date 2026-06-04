@@ -1,0 +1,22 @@
+---
+description: Global project rules for Nexus AI
+alwaysApply: true
+---
+
+# Nexus AI overview
+Nexus AI is a multi-agent financial intelligence platform with:
+- FastAPI backend
+- Next.js frontend
+- WebSocket streaming
+- ChromaDB vector memory
+- NetworkX graph memory
+- SQLite time-series tracking
+- Demo-first synthetic data mode
+
+# Global rules
+- Plan before implementation.
+- Keep changes small and reviewable.
+- Preserve backend/frontend contracts.
+- Validate all structured messages.
+- Prefer typed models over ad hoc dicts.
+- Maintain demo mode stability at all times.

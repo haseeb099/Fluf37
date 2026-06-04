@@ -1,0 +1,28 @@
+---
+description: Backend architecture rules
+globs:
+  - "backend/**/*.py"
+  - "scripts/**/*.py"
+  - "agents/**/*.py"
+---
+
+# Backend stack
+- Python 3.11+
+- FastAPI
+- Pydantic v2
+- asyncio
+- structlog
+- httpx
+
+# Backend conventions
+- Keep agent logic in dedicated classes.
+- Use async-first code paths.
+- Validate inputs and outputs with schemas.
+- Return structured event objects.
+- Keep orchestration separate from business logic.
+
+# Implementation rules
+- Add tests for new behavior.
+- Use dependency injection for LLM, memory, and connectors.
+- Do not hardcode secrets.
+- Preserve demo data mode.

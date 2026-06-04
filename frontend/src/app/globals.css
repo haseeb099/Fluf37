@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-void: #020408;
+  --bg-surface: #070d14;
+  --bg-elevated: #0d1825;
+  --accent-primary: #00d4ff;
+  --agent-connector: #00ff88;
+  --agent-finder: #ff9900;
+  --agent-adversarial: #ff3366;
+  --agent-traceback: #9966ff;
+  --agent-decision: #00d4ff;
+  --agent-evolution: #ffff00;
+  --severity-critical: #ff1744;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  background: var(--bg-void);
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+.glass-panel {
+  background: rgba(13, 24, 37, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+
+@keyframes stream-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+
+.stream-cursor::after {
+  content: "▋";
+  animation: stream-cursor 1s step-end infinite;
+  color: var(--accent-primary);
+}

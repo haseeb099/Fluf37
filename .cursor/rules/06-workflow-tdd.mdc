@@ -1,0 +1,17 @@
+---
+description: Development workflow and TDD rules
+alwaysApply: true
+---
+
+# Workflow
+- Start with a short implementation plan.
+- Write tests before implementation when practical.
+- Make one logical change at a time.
+- Run typecheck and tests after meaningful changes.
+- Review diffs carefully before moving on.
+
+# Agent workflow
+- Ask for clarification if requirements are ambiguous.
+- Prefer shared utilities and components.
+- Do not rewrite working code unnecessarily.
+- Keep outputs typed, minimal, and observable.

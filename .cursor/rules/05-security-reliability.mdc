@@ -1,0 +1,18 @@
+---
+description: Security and reliability rules
+alwaysApply: true
+---
+
+# Security rules
+- Never expose secrets in code, logs, or prompts.
+- Validate all inbound data.
+- Sanitize prompt inputs and outputs.
+- Do not store sensitive identifiers in embeddings.
+- Keep auth and rate limiting enforced.
+
+# Reliability rules
+- Prefer deterministic demo data.
+- Handle reconnects and retries gracefully.
+- Add defensive checks around external APIs.
+- Use structured logging.
+- Treat missing data as a normal case.

@@ -1,0 +1,22 @@
+---
+description: API and WebSocket contract rules
+globs:
+  - "backend/api/**/*.py"
+  - "frontend/hooks/**/*.ts"
+  - "frontend/lib/**/*.ts"
+  - "schemas/**/*.ts"
+---
+
+# API rules
+- Keep REST routes thin and schema-driven.
+- WebSocket messages must be versioned.
+- Every server event must have a client-side type.
+- Prefer additive changes over breaking changes.
+- Preserve existing event names unless absolutely necessary.
+
+# Contract workflow
+- Define schema first.
+- Implement backend emitter.
+- Update frontend parser.
+- Add sample payloads.
+- Test reconnect and partial streaming.

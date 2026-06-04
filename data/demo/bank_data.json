@@ -1,0 +1,64 @@
+{
+  "accounts": [
+    {
+      "id": "acc_001",
+      "name": "Operating Account",
+      "balance": 1250000,
+      "type": "checking"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx_010",
+      "amount": 85000,
+      "from_account": "ext_acme_001",
+      "to_entity": "Supplier X Ltd",
+      "to_account": "ext_supplier_x",
+      "timestamp": "2026-04-16T00:00:00Z",
+      "category": "vendor_payment",
+      "description": "Supply chain payment Q2",
+      "is_flagged": false
+    },
+    {
+      "id": "tx_011",
+      "amount": 82000,
+      "from_account": "ext_supplier_x",
+      "to_entity": "Nexus Holdings LLC",
+      "to_account": "ext_shell_001",
+      "timestamp": "2026-04-17T00:00:00Z",
+      "category": "intercompany",
+      "description": "Management fee",
+      "is_flagged": false
+    },
+    {
+      "id": "tx_012",
+      "amount": 79000,
+      "from_account": "ext_shell_001",
+      "to_entity": "Acme Corp",
+      "to_account": "ext_acme_001",
+      "timestamp": "2026-04-18T00:00:00Z",
+      "category": "receivable",
+      "description": "Commission payment",
+      "is_flagged": false
+    },
+    {
+      "id": "tx_030",
+      "amount": 250000,
+      "from_account": "acc_001",
+      "to_entity": "Nexus Holdings LLC",
+      "to_account": "ext_shell_001",
+      "timestamp": "2026-04-29T00:00:00Z",
+      "category": "vendor_payment",
+      "description": "Consulting services",
+      "is_flagged": false
+    }
+  ],
+  "cash_flow_forecast": {
+    "30_day_projected_inflow": 67000,
+    "30_day_projected_outflow": 195000,
+    "gap": -128000,
+    "note": "Acme Corp $450k deal on 90-day terms creates cash flow gap"
+  },
+  "generated_at": "2026-05-01T00:00:00",
+  "seed": 42
+}
