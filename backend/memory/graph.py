@@ -69,11 +69,28 @@ class NexusGraph:
                     edges.append({"source": u, "target": v, **ed})
         return {"nodes": nodes, "edges": edges}
 
+    @staticmethod
+    def _node_label(node_id: str, data: Dict[str, Any]) -> str:
+        if data.get("title"):
+            return str(data["title"])
+        if data.get("description"):
+            desc = str(data["description"])
+            return desc if len(desc) <= 72 else desc[:69] + "…"
+        return node_id
+
     def serialize(self) -> Dict[str, Any]:
+        nodes = []
+        for n, d in self.graph.nodes(data=True):
+            payload = dict(d)
+            payload["label"] = self._node_label(n, payload)
+            nodes.append({"id": n, **payload})
         return {
-            "nodes": [{"id": n, **d} for n, d in self.graph.nodes(data=True)],
+            "nodes": nodes,
             "edges": [{"source": u, "target": v, **d} for u, v, d in self.graph.edges(data=True)],
         }
+
+    def clear(self) -> None:
+        self.graph.clear()
 
     def deserialize(self, data: Dict[str, Any]) -> None:
         self.graph.clear()

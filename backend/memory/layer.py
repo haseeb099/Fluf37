@@ -4,6 +4,7 @@ from typing import List
 from pydantic import BaseModel
 
 from backend.config import NexusConfig
+from backend.memory.demo_graph import seed_demo_graph
 from backend.memory.graph import NexusGraph
 from backend.memory.timeseries import TimeSeriesMemory
 from backend.memory.vector import VectorMemory
@@ -20,25 +21,23 @@ class MemoryLayer:
         self._seeded = False
 
     async def initialize_demo(self) -> None:
-        if self._seeded:
-            return
-        for f in get_demo_failures():
-            await self.vector.store(
-                f.description,
-                MemoryMetadata(
-                    agent_id="traceback",
-                    severity=f.severity,
-                    source_ids=f.source_ids,
-                    source_types=f.source_ids,
-                    timestamp=f.timestamp.isoformat(),
-                    dollar_loss=f.dollar_loss,
-                ),
-            )
-            self.graph.add_node(f.id, "failure", {"description": f.description, "severity": f.severity})
-        self.graph.add_node("loss_event_001", "loss_event", {"dollar_loss": 79000})
-        self.graph.add_edge("fail_001", "loss_event_001", "leads_to", 0.87)
-        self.graph.save()
-        self._seeded = True
+        if not self._seeded:
+            for f in get_demo_failures():
+                await self.vector.store(
+                    f.description,
+                    MemoryMetadata(
+                        agent_id="traceback",
+                        failure_id=f.id,
+                        severity=f.severity,
+                        source_ids=f.source_ids,
+                        source_types=f.source_ids,
+                        timestamp=f.timestamp.isoformat(),
+                        dollar_loss=f.dollar_loss,
+                    ),
+                )
+            self._seeded = True
+        if self.config.uses_demo_pipeline():
+            seed_demo_graph(self.graph)
 
     async def store_agent_output(self, agent_id: str, output: BaseModel, text_repr: str) -> None:
         await self.vector.store(

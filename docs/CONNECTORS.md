@@ -35,8 +35,22 @@ Place plugins under `backend/connectors/plugins/{vendor}/connector.py` and regis
 - `X-Nexus-Tenant-Id`
 - `X-Nexus-Signature` (HMAC-SHA256 of body)
 
+## Data modes (truthful)
+
+Each connector exposes `data_mode` on `ConnectionStatus`:
+
+| Mode | Meaning |
+|------|---------|
+| `demo` | `uses_demo_pipeline()` — synthetic JSON |
+| `stub` | Live flag off or credentials missing (Plaid/Alpaca) |
+| `empty` | Live flag on; vendor API not implemented (CRM/ERP/news) |
+| `live` | Live fetch path active (bank/trading when configured) |
+
+`GET /api/v1/connectors` returns `capabilities[]` with `data_mode`, `live_vendor`, and `notes`.
+
 ## API
 
-- `POST /api/v1/connect/{source}` — connect
+- `POST /api/v1/connect/{source}` — connect (**admin**)
 - `GET /api/v1/sources/status` — all connection statuses
-- `POST /api/v1/connect/{source}/sync` — manual sync
+- `POST /api/v1/connect/{source}/sync` — manual sync (**analyst**)
+- `GET /api/v1/connectors` — types + capabilities

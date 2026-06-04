@@ -25,7 +25,7 @@ class ERPConnector(BaseConnector):
 
     async def fetch_batch(self) -> Dict[str, Any]:
         self._last_sync = datetime.utcnow()
-        if self.config.is_demo() or not self.config.nexus_enable_erp:
+        if self.config.uses_demo_pipeline() or not self.config.nexus_enable_erp:
             erp = get_demo_erp()
             return erp.model_dump()
         return {}

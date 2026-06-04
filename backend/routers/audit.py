@@ -18,3 +18,13 @@ async def export_audit(
 @router.get("/verify")
 async def verify_audit(_auth: AuthContext = Depends(require_auth)):
     return AuditLog().verify().model_dump()
+
+
+@router.get("/recent")
+async def recent_audit(
+    limit: int = 50,
+    _auth: AuthContext = Depends(require_auth),
+    __: str = Depends(require_role("analyst")),
+):
+    entries = AuditLog().tail(min(limit, 200))
+    return {"entries": entries, "count": len(entries)}

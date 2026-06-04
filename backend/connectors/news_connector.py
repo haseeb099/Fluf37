@@ -18,7 +18,7 @@ class NewsConnector(BaseConnector):
 
     async def fetch_batch(self) -> Dict[str, Any]:
         self._last_sync = datetime.utcnow()
-        if self.config.is_demo() or not self.config.nexus_enable_news:
+        if self.config.uses_demo_pipeline() or not self.config.nexus_enable_news:
             return {"articles": [a.model_dump() for a in get_demo_news()]}
         return {"articles": []}
 

@@ -4,11 +4,10 @@ from typing import Literal, Optional
 
 from fastapi import Depends, Header, HTTPException
 
+from backend.auth.constants import ROLE_HIERARCHY, Role, _parse_bearer, _role_from_value
 from backend.auth.jwt import decode_access_token
+from backend.auth.roles import resolve_api_key_role
 from backend.config import get_config
-
-Role = Literal["admin", "analyst", "viewer"]
-ROLE_HIERARCHY = {"viewer": 0, "analyst": 1, "admin": 2}
 
 
 @dataclass
@@ -16,21 +15,6 @@ class AuthContext:
     tenant_id: str
     role: Role
     auth_method: Literal["api_key", "jwt"]
-
-
-def _parse_bearer(authorization: Optional[str]) -> Optional[str]:
-    if not authorization:
-        return None
-    parts = authorization.split(" ", 1)
-    if len(parts) == 2 and parts[0].lower() == "bearer":
-        return parts[1].strip()
-    return None
-
-
-def _role_from_value(role: Optional[str]) -> Role:
-    if role in ROLE_HIERARCHY:
-        return role  # type: ignore[return-value]
-    return "viewer"
 
 
 def require_api_key(x_nexus_key: Optional[str] = Header(None, alias="X-Nexus-Key")) -> str:
@@ -63,7 +47,7 @@ async def require_auth(
         if config.auth_mode == "jwt_required":
             raise HTTPException(status_code=401, detail="JWT required")
         tenant = x_nexus_tenant_id or "default"
-        role = _role_from_value(x_nexus_role)
+        role = resolve_api_key_role(config, x_nexus_role)
         return AuthContext(tenant_id=tenant, role=role, auth_method="api_key")
 
     raise HTTPException(status_code=401, detail="Authentication required")

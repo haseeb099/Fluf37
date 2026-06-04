@@ -1,0 +1,5 @@
+# Optional vector store (ChromaDB) — requires Python 3.11–3.12 on Windows (numpy<2 wheels).
+# Demo mode (NEXUS_DEMO_MODE=true) uses in-memory vector fallback without this file.
+-r requirements.txt
+chromadb==0.5.3
+numpy==1.26.4

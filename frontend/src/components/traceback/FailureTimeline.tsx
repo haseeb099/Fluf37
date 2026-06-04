@@ -1,5 +1,6 @@
 "use client";
 
+import { graphNodeLabel, graphNodeSubtitle } from "@/lib/graphLabels";
 import type { GraphNodeData } from "@/types/graph";
 import { cn, getSeverityColor } from "@/lib/utils";
 
@@ -30,8 +31,8 @@ export function FailureTimeline({ nodes, highlightId, onHover }: FailureTimeline
             onMouseEnter={() => onHover?.(f.id)}
             onMouseLeave={() => onHover?.(null)}
           >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-mono text-xs text-purple-300">{f.id}</span>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="text-sm font-medium text-purple-200">{graphNodeLabel(f)}</span>
               {f.severity && (
                 <span
                   className="text-[10px] uppercase px-1.5 py-0.5 rounded"
@@ -44,10 +45,13 @@ export function FailureTimeline({ nodes, highlightId, onHover }: FailureTimeline
                 </span>
               )}
             </div>
+            {graphNodeSubtitle(f) && (
+              <p className="text-slate-500 text-xs mb-1">{graphNodeSubtitle(f)}</p>
+            )}
             {f.description ? (
-              <p className="text-slate-400 leading-relaxed">{f.description}</p>
+              <p className="text-slate-400 leading-relaxed text-xs">{f.description}</p>
             ) : (
-              <p className="text-slate-500 italic">No description</p>
+              <p className="text-slate-500 italic text-xs">No description</p>
             )}
           </li>
         ))}

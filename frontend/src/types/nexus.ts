@@ -23,12 +23,16 @@ export type WsAuthStatus = "pending" | "authenticated" | "failed";
 
 export type SourceType = "crm" | "erp" | "bank" | "trading" | "news" | "custom";
 
+export type DataMode = "demo" | "live" | "stub" | "empty" | "disabled";
+
 export interface ConnectionStatus {
   source_type: SourceType;
   state: string;
   last_sync?: string;
   freshness_seconds?: number;
   message?: string;
+  data_mode?: DataMode;
+  live_vendor?: string;
 }
 
 export interface BlindSpot {

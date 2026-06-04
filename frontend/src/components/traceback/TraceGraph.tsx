@@ -10,9 +10,16 @@ import ReactFlow, {
   Position,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { traceGraphNodeTypes, type TraceNodeData } from "@/components/traceback/traceGraphNodes";
+import { FailureNode, LossEventNode, type TraceNodeData } from "@/components/traceback/traceGraphNodes";
+import { graphNodeLabel, graphNodeSubtitle } from "@/lib/graphLabels";
 import { cn, getSeverityColor } from "@/lib/utils";
 import type { GraphEdgeData, GraphNodeData } from "@/types/graph";
+
+/** Module-level stable nodeTypes (React Flow #002). */
+const traceGraphNodeTypes = {
+  failure: FailureNode,
+  loss_event: LossEventNode,
+} as const;
 
 export type { GraphEdgeData, GraphNodeData };
 
@@ -37,7 +44,7 @@ function layoutNodes(rawNodes: GraphNodeData[], highlightId?: string | null): Ne
       type: nodeType,
       position: { x: 40, y: 40 + i * 110 },
       data: {
-        label: n.id,
+        label: graphNodeLabel(n),
         nodeType,
         detail: n,
         highlighted: n.id === highlightId,
@@ -53,7 +60,7 @@ function layoutNodes(rawNodes: GraphNodeData[], highlightId?: string | null): Ne
       type: "loss_event",
       position: { x: 380, y: 40 + i * 120 + Math.max(0, (failures.length - 1) * 30) },
       data: {
-        label: n.id,
+        label: graphNodeLabel(n),
         nodeType: "loss_event",
         detail: n,
         highlighted: n.id === highlightId,
@@ -85,6 +92,7 @@ function toFlowEdges(rawEdges: GraphEdgeData[]): Edge[] {
 
 export function TraceGraph({ nodes, edges, highlightId, className }: TraceGraphProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const nodeTypes = useMemo(() => traceGraphNodeTypes, []);
 
   const flowNodes = useMemo(() => layoutNodes(nodes, highlightId), [nodes, highlightId]);
   const flowEdges = useMemo(() => toFlowEdges(edges), [edges]);
@@ -112,7 +120,7 @@ export function TraceGraph({ nodes, edges, highlightId, className }: TraceGraphP
         <ReactFlow
           nodes={flowNodes}
           edges={flowEdges}
-          nodeTypes={traceGraphNodeTypes}
+          nodeTypes={nodeTypes}
           onNodeClick={onNodeClick}
           fitView
           fitViewOptions={{ padding: 0.25 }}
@@ -131,7 +139,11 @@ export function TraceGraph({ nodes, edges, highlightId, className }: TraceGraphP
       {selectedNode && (
         <aside className="lg:w-72 glass-panel p-4 text-sm space-y-2 shrink-0">
           <p className="text-xs uppercase text-purple-400">{selectedNode.type || "node"}</p>
-          <p className="font-mono text-cyan-200">{selectedNode.id}</p>
+          <p className="font-medium text-cyan-100">{graphNodeLabel(selectedNode)}</p>
+          <p className="font-mono text-[10px] text-slate-500">{selectedNode.id}</p>
+          {graphNodeSubtitle(selectedNode) && (
+            <p className="text-slate-400 text-xs">{graphNodeSubtitle(selectedNode)}</p>
+          )}
           {selectedNode.severity && (
             <p>
               Severity:{" "}

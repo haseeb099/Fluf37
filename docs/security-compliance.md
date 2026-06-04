@@ -1,56 +1,61 @@
 # Security and compliance
 
-This document describes **technical controls in the OSS codebase**. It is not legal or compliance advice. Engage your counsel for GLBA, SOC 2, MiFID, or sector-specific obligations.
+Technical controls in the OSS codebase (not legal advice).
 
 ## Threat model (summary)
 
-| Asset | Risk | Mitigation today | Roadmap |
-|-------|------|------------------|---------|
-| API | Unauthorized pipeline runs | `X-Nexus-Key` | JWT + rate limits |
-| WebSocket | Open pipeline trigger | None | Token auth |
-| Webhooks | Spoofed ingest | HMAC (non-demo) | Key rotation, replay window |
-| Audit log | Tampering | Hash chain + `/audit/verify` | Remote append-only store |
-| Memory stores | Data at rest exposure | Local paths | Encryption at rest, tenant isolation |
-| LLM prompts | PII leakage | Demo canned text | Redaction layer |
+| Asset | Risk | Mitigation (v0.9) |
+|-------|------|-------------------|
+| REST API | Unauthorized pipeline | API key + JWT (`AUTH_MODE`) + RBAC |
+| WebSocket | Open pipeline trigger | Optional `NEXUS_WS_REQUIRE_AUTH`; API key or JWT via query/`AUTH` |
+| Webhooks | Spoofed ingest | HMAC when `NEXUS_DEMO_MODE=true` is **false** (pre-live enforces HMAC) |
+| Audit log | Tampering | SHA-256 hash chain + `GET /api/v1/audit/verify` |
+| Role escalation | Client-forged admin | `trust_client_role()` — **off** in pre-live and production-like modes |
+| Memory | Cross-tenant bleed | Header tenancy only; shared DB paths (roadmap: isolation) |
 
-## Authentication and authorization
+## Authentication
 
-- **API key** — Compare `X-Nexus-Key` to `NEXUS_API_KEY` (`backend/auth/deps.py`).
-- **RBAC** — `require_role("admin")` on connect/disconnect and audit export; role from header (trust boundary issue for production).
-- **JWT** — `JWT_SECRET` in config; **not applied** to FastAPI routes yet.
+- **API key** — `X-Nexus-Key` vs `NEXUS_API_KEY`.
+- **JWT** — `POST /api/v1/auth/token` → `Authorization: Bearer` on protected routes.
+- **Modes** — `AUTH_MODE`: `api_key_only` | `jwt_optional` | `jwt_required`.
 
-## Audit and explainability
+## Authorization (RBAC)
 
-- `AuditLog` (`backend/utils/audit_log.py`) — append-only JSONL with `hash` / `prev_hash` chain.
-- Endpoints: `GET /api/v1/audit/verify`, `GET /api/v1/audit/export` (admin).
-- Agent outputs include `chain_of_thought` and `counterfactual` fields where applicable (blind spots).
+| Role | Capabilities |
+|------|----------------|
+| `viewer` | Read sources status, decisions, memory, audit verify |
+| `analyst` | Run pipeline (REST/WS), sync connectors, view audit tail |
+| `admin` | Connect/disconnect sources, export audit |
+
+**Role source of truth**
+
+| Mode | How role is set |
+|------|-----------------|
+| JWT request | `role` claim from token (issued by `/auth/token`) |
+| API key + `NEXUS_DEMO_MODE=true` + `NEXUS_TRUST_CLIENT_ROLE=true` | `X-Nexus-Role` header (local demo only) |
+| API key + pre-live or `NEXUS_DEMO_MODE=false` | Forced `viewer` on API key; elevated roles only via admin JWT at token issuance |
+
+Production: terminate TLS at gateway; map IdP groups to JWT `role`; never trust `X-Nexus-Role` from browsers.
+
+## Pre-live mode (`NEXUS_PRE_LIVE_MODE=true`)
+
+- Same **deterministic demo pipeline** as `NEXUS_DEMO_MODE` (synthetic data + demo LLM).
+- **Production-like RBAC** — `trust_client_role()` is false; HMAC ingest enforced.
+- Use for dress-rehearsal before `NEXUS_DEMO_MODE=false`.
+
+## Audit and pipeline trace
+
+- **LLM audit** — `LLMClient` appends token usage entries.
+- **Pipeline trace** — `PipelineTracer` writes `pipeline_start`, `pipeline_state`, `agent_complete`, `pipeline_complete` to `data/audit.jsonl`.
+- **Correlation** — `correlation_id` on `PIPELINE_STATE` WebSocket/REST events; stored in audit payload preview.
+- **Endpoints** — `GET /api/v1/audit/verify`, `GET /api/v1/audit/recent` (analyst+), `GET /api/v1/audit/export` (admin).
 
 ## Data handling
 
-- **Demo mode** — Synthetic data only; safe for public demos and CI.
-- **Live mode** — You are responsible for vendor DPAs, retention, and regional residency.
-- **Embeddings** — Do not embed raw account numbers or national IDs; normalize and minimize fields in `SourceData`.
-- **Credentials** — `CredentialStore` is in-memory; use a vault (HashiCorp, cloud KMS) in production.
-
-## Multi-tenancy
-
-- Header `X-Nexus-Tenant-Id` selects orchestrator and connection manager instances.
-- **No database-level tenant isolation** — all tenants share SQLite/Chroma paths unless you deploy per-tenant stacks or extend storage (roadmap).
-
-## Privacy
-
-- Minimize fields in connectors and logs.
-- Provide data export/delete processes in your product layer (not automated in OSS core).
-- Document subprocessors if you enable live LLM providers.
-
-## Compliance-oriented practices (recommended)
-
-1. **Human approval** before evolution weight changes (`POST /api/v1/evolution/approve/{cycle_id}`).
-2. **Decision outcomes** logged for retrospective review (`POST .../outcome`).
-3. **Simulation before action** — run full pipeline including adversarial step before executing trades or credit decisions in production workflows.
-4. **Retention policy** — rotate `data/audit.jsonl` and SQLite per your records schedule.
-5. **Access reviews** — map `X-Nexus-Role` to IdP groups when JWT lands.
+- Demo / pre-live: synthetic data only.
+- Live mode: your DPAs and retention policies apply.
+- Do not embed raw PII in vector metadata.
 
 ## Reporting vulnerabilities
 
-Report security issues privately to the maintainers (add `SECURITY.md` with contact email when publishing). Do not open public issues for exploitable flaws.
+See [SECURITY.md](../SECURITY.md).

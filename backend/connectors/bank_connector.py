@@ -14,6 +14,7 @@ logger = structlog.get_logger()
 class BankConnector(BaseConnector):
     source_type = "bank"
     supports_webhook = True
+    live_vendor = "plaid"
 
     async def connect(self) -> ConnectionStatus:
         self._connected = True
@@ -24,7 +25,7 @@ class BankConnector(BaseConnector):
 
     async def fetch_batch(self) -> Dict[str, Any]:
         self._last_sync = datetime.utcnow()
-        if self.config.is_demo() or not self.config.nexus_enable_bank:
+        if self.config.uses_demo_pipeline() or not self.config.nexus_enable_bank:
             return {"transactions": [t.model_dump() for t in get_demo_bank()]}
         if self.config.plaid_configured():
             client = PlaidClient(

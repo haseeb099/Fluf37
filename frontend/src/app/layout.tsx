@@ -1,18 +1,38 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { NexusWebSocketProvider } from "@/providers/NexusWebSocketProvider";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Nexus AI",
   description: "Multi-agent financial intelligence",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: ["/icon.svg"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen">
-        <Sidebar />
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} flex min-h-screen font-sans`}>
+        <NexusWebSocketProvider>
+          <Sidebar />
+          <main className="flex-1 p-6 md:p-8 overflow-auto bg-void">{children}</main>
+        </NexusWebSocketProvider>
       </body>
     </html>
   );

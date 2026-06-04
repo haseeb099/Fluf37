@@ -7,24 +7,33 @@ All settings load from `.env` via `backend/config.py` (`NexusConfig`, pydantic-s
 | Variable | Default | Notes |
 |----------|---------|-------|
 | `NEXUS_DEMO_MODE` | `true` | **Keep true** for eval, CI, and sales demos |
+| `NEXUS_PRE_LIVE_MODE` | `false` | Demo pipeline + production-like RBAC + HMAC ingest |
+| `NEXUS_TRUST_CLIENT_ROLE` | `true` | Demo only: honor `X-Nexus-Role` on API-key auth |
 | `NEXUS_API_KEY` | `demo-key` | Rotate in production; sent as `X-Nexus-Key` |
 | `NEXUS_DEMO_SEED` | `42` | Passed to `generate_demo_data.py` |
 | `CORS_ORIGINS` | localhost:3000 | Comma-separated |
 
-## LLM (roadmap for live)
+## LLM
 
 | Variable | Default | Notes |
 |----------|---------|-------|
-| `ANTHROPIC_API_KEY` | `demo` | Unused when demo mode on |
-| `OPENAI_API_KEY` | `demo` | Unused when demo mode on |
+| `NEXUS_LIVE_LLM` | `false` | Use live provider while demo/pre-live synthetic data runs |
+| `LLM_PROVIDER` | `anthropic` | `anthropic` \| `openai` \| `groq` |
+| `ANTHROPIC_API_KEY` | `demo` | Required when `LLM_PROVIDER=anthropic` |
+| `OPENAI_API_KEY` | `demo` | Required when `LLM_PROVIDER=openai` |
+| `GROQ_API_KEY` | `demo` | Required when `LLM_PROVIDER=groq` — [console.groq.com](https://console.groq.com) |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Groq model id |
+| `GROQ_BASE_URL` | `https://api.groq.com/openai/v1` | OpenAI-compatible endpoint |
 
-`LLMClient` does not call live APIs yet when `NEXUS_DEMO_MODE=false`.
+`LLMClient` uses live APIs when `uses_live_llm()` is true (provider key set + `NEXUS_LIVE_LLM=true` or demo off).
 
-## Auth (partial)
+## Auth — **Shipped** (v0.9)
 
 | Variable | Default | Notes |
 |----------|---------|-------|
-| `JWT_SECRET` | change-me | **Not wired** to routes; roadmap |
+| `AUTH_MODE` | jwt_optional | `api_key_only` \| `jwt_optional` \| `jwt_required` |
+| `JWT_SECRET` | change-me | Signs tokens from `POST /api/v1/auth/token` |
+| `NEXUS_WS_REQUIRE_AUTH` | false | Require token on WebSocket `RUN_PIPELINE` |
 
 ## Connectors
 
@@ -52,6 +61,13 @@ Plaid: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV`
 Alpaca: `ALPACA_API_KEY`, `ALPACA_SECRET_KEY`, `ALPACA_BASE_URL`
 
 CRM/ERP: see `.env.example` for Salesforce, HubSpot, NetSuite, QuickBooks placeholders.
+
+## Install profiles
+
+| File | When |
+|------|------|
+| `requirements.txt` | Demo/CI core (Python 3.11–3.13); in-memory vector fallback |
+| `requirements-vector.txt` | ChromaDB persistence (Python 3.11–3.12 recommended on Windows) |
 
 ## Memory paths
 

@@ -66,7 +66,7 @@ class ConnectionManager:
             )
 
     async def sync_all(self, demo: Optional[bool] = None) -> ConnectorOutput:
-        use_demo = demo if demo is not None else self.config.is_demo()
+        use_demo = demo if demo is not None else self.config.uses_demo_pipeline()
         enabled = self.config.get_enabled_connectors()
         if use_demo:
             enabled = ["crm", "erp", "bank", "trading", "news"]

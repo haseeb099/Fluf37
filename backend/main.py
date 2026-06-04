@@ -18,7 +18,7 @@ from backend.integration.connection_manager import ConnectionManager
 from backend.integration.credential_store import CredentialStore
 from backend.memory.layer import MemoryLayer
 from backend.rate_limit import limiter
-from backend.routers import audit, decisions, evolution, ingest, memory, nexus, sources
+from backend.routers import audit, decisions, evolution, ingest, memory, nexus, platform, plugins, risk_review, sources
 from backend.schemas.models import WSClientMessage
 from backend.utils.llm_client import LLMClient
 
@@ -33,21 +33,20 @@ _credentials = CredentialStore()
 _ready = False
 
 
-config = get_config()
-
-
 def _ws_auth_required() -> bool:
-    return config.nexus_ws_require_auth or (
-        config.auth_mode == "jwt_required" and not config.is_demo()
+    cfg = get_config()
+    return cfg.nexus_ws_require_auth or (
+        cfg.auth_mode == "jwt_required" and not cfg.is_demo()
     )
 
 
 def _authenticate_ws_token(token: Optional[str]) -> bool:
     if not token:
         return False
-    if token == config.nexus_api_key:
+    cfg = get_config()
+    if token == cfg.nexus_api_key:
         return True
-    return decode_access_token(config, token) is not None
+    return decode_access_token(cfg, token) is not None
 
 
 @asynccontextmanager
@@ -77,7 +76,7 @@ app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.get_cors_origins(),
+    allow_origins=get_config().get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -91,6 +90,9 @@ app.include_router(decisions.router)
 app.include_router(evolution.router)
 app.include_router(ingest.router)
 app.include_router(audit.router)
+app.include_router(platform.router)
+app.include_router(plugins.router)
+app.include_router(risk_review.router)
 
 
 def get_memory() -> MemoryLayer:
@@ -117,11 +119,26 @@ def get_orchestrator(tenant_id: str = "default") -> NexusOrchestrator:
 
 @app.get("/health")
 async def health():
+    cfg = get_config()
     agent_states = {}
     orch = _orchestrators.get("default")
     if _ready and orch is not None:
         agent_states = {aid: agent.state.value for aid, agent in orch.agents.items()}
-    return {"status": "ok", "demo_mode": config.is_demo(), "agents": agent_states}
+    return {
+        "status": "ok",
+        "version": app.version,
+        "ready": _ready,
+        "demo_mode": cfg.is_demo(),
+        "pre_live_mode": cfg.nexus_pre_live_mode,
+        "uses_demo_pipeline": cfg.uses_demo_pipeline(),
+        "llm_mode": cfg.llm_mode(),
+        "llm_provider": cfg.llm_provider if cfg.llm_configured() else None,
+        "live_llm_enabled": cfg.uses_live_llm(),
+        "trust_client_role": cfg.trust_client_role(),
+        "auth_mode": cfg.auth_mode,
+        "product_wedge": "Pre-Release Risk Review",
+        "agents": agent_states,
+    }
 
 
 @app.get("/ready")
@@ -129,9 +146,10 @@ async def ready():
     if not _ready or _memory is None:
         return {"ready": False, "reason": "initializing"}
     stats = await _memory.get_stats()
+    cfg = get_config()
     return {
         "ready": True,
-        "connectors_registered": len(config.get_enabled_connectors()),
+        "connectors_registered": len(cfg.get_enabled_connectors()),
         "memory": stats.model_dump(),
     }
 
@@ -175,7 +193,7 @@ async def websocket_stream(websocket: WebSocket):
                     })
                     continue
                 orch = get_orchestrator()
-                async for event in orch.run_pipeline(mode=msg.mode or "demo"):
+                async for event in orch.run_pipeline(mode=msg.mode or "demo", tenant_id="default"):
                     await websocket.send_json(event.model_dump(mode="json"))
                 report = orch.aggregate_results()
                 await websocket.send_json({

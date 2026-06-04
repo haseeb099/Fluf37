@@ -14,6 +14,7 @@ from backend.schemas.models import (
     SourceData,
     TracebackOutput,
 )
+from backend.utils.prompt_context import DECISION_SYSTEM, decision_prompt
 
 
 class AllSignals(BaseModel):
@@ -33,8 +34,8 @@ class DecisionAgent(BaseAgent):
         decisions = self._make_decisions(data, payload)
 
         async for event in self._stream_llm(
-            "Synthesize final trade and loan decisions.",
-            system="You are the decision synthesis agent.",
+            decision_prompt(payload),
+            system=DECISION_SYSTEM,
         ):
             yield event
 
@@ -48,7 +49,7 @@ class DecisionAgent(BaseAgent):
         if acme_pos:
             stress_passed = not (acme_pos.order_book_imbalance < -0.3 and acme_pos.rsi < 35)
             decisions.append(DecisionOutput(
-                id="dec_trade_acme" if self.config.is_demo() else f"dec_{uuid4().hex[:8]}",
+                id="dec_trade_acme" if self.config.uses_demo_pipeline() else f"dec_{uuid4().hex[:8]}",
                 decision_type="trade",
                 recommendation="SELL ACME — order book sell pressure contradicts RSI oversold signal",
                 confidence=0.78,
@@ -62,7 +63,7 @@ class DecisionAgent(BaseAgent):
         if acme_deal:
             high_risk = len(signals.silent_finder.blind_spots) >= 2
             decisions.append(DecisionOutput(
-                id="dec_loan_acme" if self.config.is_demo() else f"dec_{uuid4().hex[:8]}",
+                id="dec_loan_acme" if self.config.uses_demo_pipeline() else f"dec_{uuid4().hex[:8]}",
                 decision_type="loan",
                 recommendation="REVIEW — defer approval pending concentration and cash flow analysis",
                 confidence=0.72 if high_risk else 0.55,
@@ -74,7 +75,7 @@ class DecisionAgent(BaseAgent):
             ))
         if not decisions:
             decisions.append(DecisionOutput(
-                id="dec_risk_flag" if self.config.is_demo() else f"dec_{uuid4().hex[:8]}",
+                id="dec_risk_flag" if self.config.uses_demo_pipeline() else f"dec_{uuid4().hex[:8]}",
                 decision_type="risk_flag",
                 recommendation="MONITOR — elevated cross-source risk signals",
                 confidence=0.65,

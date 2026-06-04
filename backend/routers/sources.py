@@ -54,6 +54,7 @@ async def sync_source(
     source: SourceType,
     tenant: str = Depends(get_current_tenant),
     _auth: AuthContext = Depends(require_auth),
+    ___: Role = Depends(require_role("analyst")),
 ):
     from backend.main import get_connection_manager
     mgr = get_connection_manager(tenant)
@@ -68,4 +69,7 @@ async def list_connectors(
     from backend.config import get_config
     from backend.integration.registry import ConnectorRegistry
     reg = ConnectorRegistry(get_config())
-    return {"connectors": reg.list_types()}
+    return {
+        "types": reg.list_types(),
+        "capabilities": reg.describe_all(),
+    }

@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from backend.agents.base import AgentState, BaseAgent
 from backend.integration.connection_manager import ConnectionManager
 from backend.schemas.models import AgentEvent
+from backend.utils.prompt_context import FINANCIAL_ANALYST_SYSTEM, connector_prompt
 
 
 class ConnectorAgent(BaseAgent):
@@ -27,7 +28,7 @@ class ConnectorAgent(BaseAgent):
                 data={"source": source},
             )
 
-        output = await self.connection_manager.sync_all(demo=self.config.is_demo())
+        output = await self.connection_manager.sync_all(demo=self.config.uses_demo_pipeline())
 
         for sync in output.sync_results:
             yield AgentEvent(
@@ -36,7 +37,10 @@ class ConnectorAgent(BaseAgent):
                 data=sync.model_dump(),
             )
 
-        async for event in self._stream_llm("Summarize multi-source sync status."):
+        async for event in self._stream_llm(
+            connector_prompt(output),
+            system=FINANCIAL_ANALYST_SYSTEM,
+        ):
             yield event
 
         yield self._emit("AGENT_COMPLETE", output.model_dump())

@@ -18,7 +18,7 @@ class CRMConnector(BaseConnector):
 
     async def fetch_batch(self) -> Dict[str, Any]:
         self._last_sync = datetime.utcnow()
-        if self.config.is_demo() or not self.config.nexus_enable_crm:
+        if self.config.uses_demo_pipeline() or not self.config.nexus_enable_crm:
             return {"deals": [d.model_dump() for d in get_demo_crm()]}
         return {"deals": []}
 

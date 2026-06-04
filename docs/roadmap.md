@@ -23,10 +23,10 @@ Labels match [README.md](../README.md) **What ships today**.
 
 | Item | Outcome |
 |------|---------|
-| Live `LLMClient` | Anthropic/OpenAI with timeout, retries, token audit (v0.9 groundwork) |
-| Plaid + Alpaca connectors | Real fetch behind `NEXUS_ENABLE_*` (v0.9 stubs + config) |
-| JWT middleware | `POST /api/v1/auth/token` + Bearer on REST |
-| Rate limiting | `slowapi` on `/api/v1/*` |
+| Live `LLMClient` | Anthropic/OpenAI with timeout, retries, token audit (validate in staging) |
+| Plaid + Alpaca connectors | Real fetch behind `NEXUS_ENABLE_*` (stubs exist; production hardening) |
+| JWT required in prod | Enforce `AUTH_MODE=jwt_required` + gateway RBAC (token route shipped in v0.9) |
+| Rate limiting tuning | Per-tenant limits beyond global `slowapi` |
 | Health metrics | Prometheus/OpenTelemetry in `observability/` |
 | Frontend API key | `NEXT_PUBLIC_NEXUS_API_KEY` (dev); gateway in prod |
 | CRM/ERP live | Salesforce or HubSpot read-only sync |

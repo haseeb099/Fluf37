@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from backend.agents.base import AgentState, BaseAgent
 from backend.schemas.models import AgentEvent, BlindSpot, BlindSpotOutput, SourceData
+from backend.utils.prompt_context import FINANCIAL_ANALYST_SYSTEM, silent_finder_prompt
 
 
 class SilentForcingFinder(BaseAgent):
@@ -15,8 +16,8 @@ class SilentForcingFinder(BaseAgent):
         blind_spots = self._detect_demo_patterns(payload)
 
         async for event in self._stream_llm(
-            f"Analyze {len(blind_spots)} blind spots across CRM, ERP, bank, trading.",
-            system="You are a financial risk analyst finding unmeasured metrics.",
+            silent_finder_prompt(payload, blind_spots),
+            system=FINANCIAL_ANALYST_SYSTEM,
         ):
             yield event
 

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from backend.agents.base import AgentState, BaseAgent
 from backend.schemas.models import AgentEvent, EvolutionReport
+from backend.utils.prompt_context import EVOLUTION_SYSTEM, evolution_prompt
 
 
 class EvolutionInput(BaseModel):
@@ -18,7 +19,10 @@ class EvolutionAgent(BaseAgent):
         self._set_state(AgentState.RUNNING)
         yield self._emit("AGENT_START", {})
 
-        async for event in self._stream_llm("Generate evolution report with weight change proposals."):
+        async for event in self._stream_llm(
+            evolution_prompt(payload.decisions_count),
+            system=EVOLUTION_SYSTEM,
+        ):
             yield event
 
         report = EvolutionReport(

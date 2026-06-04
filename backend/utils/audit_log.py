@@ -55,6 +55,12 @@ class AuditLog:
                 count += 1
         return AuditVerification(valid=True, entries_checked=count)
 
+    def tail(self, limit: int = 50) -> list:
+        if not self.path.exists():
+            return []
+        lines = [ln for ln in self.path.read_text(encoding="utf-8").split("\n") if ln.strip()]
+        return [json.loads(ln) for ln in lines[-limit:]]
+
     def export(self, fmt: Literal["json"] = "json") -> bytes:
         if not self.path.exists():
             return b"[]"

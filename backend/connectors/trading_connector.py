@@ -13,6 +13,7 @@ logger = structlog.get_logger()
 
 class TradingConnector(BaseConnector):
     source_type = "trading"
+    live_vendor = "alpaca"
 
     async def connect(self) -> ConnectionStatus:
         self._connected = True
@@ -23,7 +24,7 @@ class TradingConnector(BaseConnector):
 
     async def fetch_batch(self) -> Dict[str, Any]:
         self._last_sync = datetime.utcnow()
-        if self.config.is_demo() or not self.config.nexus_enable_trading:
+        if self.config.uses_demo_pipeline() or not self.config.nexus_enable_trading:
             return {"positions": [p.model_dump() for p in get_demo_trading()]}
         if self.config.alpaca_configured():
             client = AlpacaClient(

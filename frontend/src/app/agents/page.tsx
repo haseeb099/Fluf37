@@ -1,22 +1,40 @@
 "use client";
 
+import { AppShell } from "@/components/layout/AppShell";
+import { AgentGrid } from "@/components/dashboard/AgentGrid";
+import { Badge } from "@/components/ui/Badge";
+import { useNexusWs } from "@/providers/NexusWebSocketProvider";
 import { useNexusStore } from "@/store/nexusStore";
+import { Radio } from "lucide-react";
 
 export default function AgentsPage() {
-  const tokens = useNexusStore((s) => s.agentTokens);
+  const { isConnected } = useNexusWs();
+  const pipelineState = useNexusStore((s) => s.pipelineState);
+  const running =
+    pipelineState !== "IDLE" && pipelineState !== "COMPLETE" && pipelineState !== "ERROR";
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-semibold text-cyan-300">Agent Console</h2>
-      {Object.entries(tokens).map(([id, text]) => (
-        <div key={id} className="glass-panel p-4">
-          <h3 className="text-cyan-400 capitalize mb-2">{id}</h3>
-          <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap stream-cursor">{text || "—"}</pre>
+    <AppShell
+      title="Agent activity"
+      subtitle="Live streaming output from each agent in the six-stage risk review pipeline."
+    >
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={isConnected ? "success" : "critical"}>
+            <Radio className="h-3 w-3 mr-1 inline" />
+            {isConnected ? "Stream connected" : "Stream disconnected"}
+          </Badge>
+          <Badge variant="outline">Pipeline: {pipelineState}</Badge>
+          {running && <Badge variant="warning">Streaming</Badge>}
         </div>
-      ))}
-      {Object.keys(tokens).length === 0 && (
-        <p className="text-slate-500">No agent output yet. Run the pipeline from the sidebar.</p>
-      )}
-    </div>
+
+        <p className="text-sm text-muted max-w-2xl">
+          Run a risk review from the Overview page to populate agent narratives. Each card shows the
+          latest tokens streamed from that agent over WebSocket.
+        </p>
+
+        <AgentGrid />
+      </div>
+    </AppShell>
   );
 }

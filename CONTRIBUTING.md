@@ -14,6 +14,7 @@ Thank you for helping make Nexus AI credible for developers, buyers, and the ope
 cp .env.example .env
 python -m venv venv && source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
+python scripts/verify_setup.py
 python scripts/generate_demo_data.py --seed 42
 uvicorn backend.main:app --reload --port 8000
 ```
@@ -46,6 +47,7 @@ GitHub + Context7 are configured in [.cursor/mcp.json](.cursor/mcp.json). Set `G
 ## Testing expectations
 
 - New agent logic → extend `tests/test_pipeline_e2e.py` or add focused agent tests.
+- WebSocket behavior → `tests/test_websocket.py`
 - New API routes → `tests/test_api.py` or dedicated router tests.
 - Connectors → `tests/test_connectors.py` with demo fixtures only unless live tests are gated behind env flags.
 

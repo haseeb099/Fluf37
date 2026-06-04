@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ParsedWSEvent } from "@/lib/wsSchema";
+import { formatAgentError } from "@/lib/formatAgentError";
 import type { BlindSpot, DecisionOutput, PipelineState, WsAuthStatus } from "@/types/nexus";
 
 const PIPELINE_STATES: PipelineState[] = [
@@ -71,11 +72,7 @@ export const useNexusStore = create<NexusStore>((set) => ({
         set({ wsAuthStatus: "failed", lastError: "WebSocket authentication failed" });
         return;
       }
-      const msg =
-        typeof event.data === "string"
-          ? event.data
-          : JSON.stringify(event.data ?? "Agent error");
-      set({ lastError: msg, pipelineState: "ERROR" });
+      set({ lastError: formatAgentError(event.data) });
       return;
     }
     if (event.type === "PIPELINE_STATE" && typeof event.data === "object" && event.data !== null) {
@@ -91,6 +88,7 @@ export const useNexusStore = create<NexusStore>((set) => ({
           set({ lastError: "Pipeline entered error state" });
         }
         if (state === "COMPLETE") {
+          set({ lastError: null });
           const report = (event.data as { report?: { decisions?: DecisionOutput[] } }).report;
           if (report?.decisions?.length) {
             set({ decisions: report.decisions });

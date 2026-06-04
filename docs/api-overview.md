@@ -15,9 +15,12 @@ Optional headers:
 | Header | Default | Purpose |
 |--------|---------|---------|
 | `X-Nexus-Tenant-Id` | `default` | Isolate orchestrator/connector manager |
-| `X-Nexus-Role` | `admin` in dev | `viewer` \| `analyst` \| `admin` for RBAC |
+| `X-Nexus-Role` | `viewer` | Honored only when `trust_client_role()` (demo + `NEXUS_TRUST_CLIENT_ROLE`) |
+| `Authorization` | — | `Bearer` JWT from `POST /api/v1/auth/token` |
 
-**Production note:** Set roles at the API gateway; do not trust client-supplied `X-Nexus-Role`.
+**RBAC:** Pipeline `POST /api/v1/nexus/run/demo` and `POST .../sync` require **analyst**. Connect/disconnect require **admin**.
+
+**Production:** Set JWT `role` at gateway; do not trust browser `X-Nexus-Role` when `NEXUS_PRE_LIVE_MODE` or `NEXUS_DEMO_MODE=false`.
 
 ## Health
 
@@ -30,7 +33,7 @@ Optional headers:
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/nexus/run/demo` | Run full pipeline synchronously (returns event count) |
+| POST | `/api/v1/nexus/run/demo` | Run full pipeline (analyst+; returns `correlation_id`) |
 | GET | `/api/v1/nexus/status` | `pipeline_state`, `context_keys` |
 
 ## WebSocket
@@ -60,8 +63,8 @@ Structured `AgentEvent` JSON (`type`, `agent_id`, `data`) plus final:
 | GET | `/api/v1/sources/status` | All source connection statuses |
 | POST | `/api/v1/connect/{source}` | Connect (admin) |
 | DELETE | `/api/v1/connect/{source}` | Disconnect (admin) |
-| POST | `/api/v1/connect/{source}/sync` | Manual sync |
-| GET | `/api/v1/connectors` | List registered connector types |
+| POST | `/api/v1/connect/{source}/sync` | Manual sync (analyst) |
+| GET | `/api/v1/connectors` | Types + `capabilities` (data_mode, live_vendor) |
 
 `source` ∈ `crm` | `erp` | `bank` | `trading` | `news` | `custom` | `webhook`
 
@@ -108,15 +111,16 @@ Body for outcome:
 
 | Method | Path |
 |--------|------|
-| GET | `/api/v1/audit/verify` |
-| GET | `/api/v1/audit/export` |
+| GET | `/api/v1/audit/verify` | Hash-chain integrity (authenticated) |
+| GET | `/api/v1/audit/recent` | Tail of audit log (analyst+) |
+| GET | `/api/v1/audit/export` | Full export (admin) |
 
 ## Example: demo run
 
 ```bash
 curl -s http://localhost:8000/health
 curl -s http://localhost:8000/api/v1/sources/status -H "X-Nexus-Key: demo-key"
-curl -s -X POST http://localhost:8000/api/v1/nexus/run/demo -H "X-Nexus-Key: demo-key"
+curl -s -X POST http://localhost:8000/api/v1/nexus/run/demo -H "X-Nexus-Key: demo-key" -H "X-Nexus-Role: analyst"
 ```
 
 ## Frontend client

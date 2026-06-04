@@ -1,66 +1,143 @@
 "use client";
 
 import Link from "next/link";
-import { useNexusWebSocket } from "@/hooks/useNexusWebSocket";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import {
+  Bot,
+  GitBranch,
+  LayoutDashboard,
+  Play,
+  Plug,
+  Scale,
+  Sparkles,
+} from "lucide-react";
 import { useNexusStore } from "@/store/nexusStore";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { cn } from "@/lib/utils";
+import { fetchAuthToken } from "@/lib/api";
+import { useHealthStatus } from "@/hooks/useHealthStatus";
+import { useNexusWs } from "@/providers/NexusWebSocketProvider";
 
-const links = [
-  { href: "/", label: "Dashboard" },
-  { href: "/connections", label: "Connections" },
-  { href: "/agents", label: "Agents" },
-  { href: "/traceback", label: "Traceback" },
-  { href: "/decisions", label: "Decisions" },
-  { href: "/evolution", label: "Evolution" },
+const NAV = [
+  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/integrations", label: "Integrations", icon: Plug },
+  { href: "/agents", label: "Agent activity", icon: Bot },
+  { href: "/traceback", label: "Traceback", icon: GitBranch },
+  { href: "/decisions", label: "Decisions", icon: Scale },
 ];
 
+const ADVANCED = [{ href: "/evolution", label: "Evolution", icon: Sparkles }];
+
+const showAdvanced = process.env.NEXT_PUBLIC_SHOW_ADVANCED === "true";
+
 export function Sidebar() {
-  const { runPipeline, isConnected, lastError } = useNexusWebSocket();
+  const pathname = usePathname();
+  const { runPipeline, isConnected, lastError } = useNexusWs();
   const pipelineState = useNexusStore((s) => s.pipelineState);
   const wsAuthStatus = useNexusStore((s) => s.wsAuthStatus);
   const busy = pipelineState !== "IDLE" && pipelineState !== "COMPLETE" && pipelineState !== "ERROR";
+  const health = useHealthStatus();
+  const llmMode = health?.llm_mode ?? null;
+  const onDashboard = pathname === "/";
+
+  useEffect(() => {
+    fetchAuthToken("viewer").catch(() => undefined);
+  }, []);
 
   return (
     <aside
-      className="w-56 border-r border-cyan-900/30 p-4 flex flex-col gap-4"
+      className="w-64 shrink-0 border-r border-border flex flex-col min-h-screen"
       style={{ background: "var(--bg-surface)" }}
     >
-      <h1 className="text-lg font-bold text-cyan-400">Nexus AI</h1>
-      <button
-        type="button"
-        onClick={runPipeline}
-        disabled={!isConnected || busy}
-        title={
-          !isConnected
-            ? "Waiting for WebSocket connection"
-            : busy
-              ? "Pipeline in progress"
-              : "Run demo pipeline"
-        }
-        className="px-3 py-2 rounded bg-cyan-600/30 border border-cyan-500/50 text-sm hover:bg-cyan-600/50 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Run Pipeline (Demo)
-      </button>
-      <p className="text-xs text-slate-500">
-        WS: {isConnected ? "connected" : "disconnected"}
-        {wsAuthStatus === "authenticated" ? " · auth ok" : wsAuthStatus === "failed" ? " · auth failed" : ""} ·{" "}
-        {pipelineState}
-      </p>
-      {lastError && (
-        <p className="text-xs text-red-400 break-words" role="alert">
-          {lastError}
-        </p>
-      )}
-      <nav className="flex flex-col gap-1">
-        {links.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className="text-sm text-slate-300 hover:text-cyan-400 px-2 py-1 rounded"
+      <div className="p-5 border-b border-border space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-500/30 to-sky-600/10 border border-sky-500/30 flex items-center justify-center shadow-glow">
+            <Sparkles className="h-4 w-4 text-sky-300" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-slate-100 tracking-tight">Nexus AI</h1>
+            <p className="text-[10px] text-muted leading-tight">Financial intelligence</p>
+          </div>
+        </div>
+
+        {!onDashboard && (
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full shadow-glow"
+            onClick={runPipeline}
+            disabled={!isConnected || busy}
           >
-            {l.label}
-          </Link>
-        ))}
+            <Play className="h-4 w-4 fill-current" />
+            {busy ? "Running…" : "Run risk review"}
+          </Button>
+        )}
+
+        <div className="flex flex-wrap gap-1.5">
+          {llmMode && (
+            <Badge variant={llmMode === "live" ? "success" : "warning"}>
+              LLM {llmMode}
+            </Badge>
+          )}
+          <Badge variant={isConnected ? "success" : "critical"}>
+            {isConnected ? "WS ok" : "WS off"}
+          </Badge>
+        </div>
+      </div>
+
+      <nav className="flex-1 p-3 space-y-0.5">
+        {NAV.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                active
+                  ? "bg-sky-500/10 text-sky-200 border border-sky-500/20"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent"
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {label}
+            </Link>
+          );
+        })}
+        {showAdvanced && (
+          <>
+            <p className="text-[10px] uppercase tracking-wider text-slate-600 px-3 pt-4 pb-1">
+              Advanced
+            </p>
+            {ADVANCED.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-slate-500 hover:text-slate-300"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </>
+        )}
       </nav>
+
+      <div className="p-4 border-t border-border space-y-2">
+        <p className="text-[11px] text-muted">
+          Pipeline: <span className="text-slate-300">{pipelineState}</span>
+        </p>
+        {wsAuthStatus === "authenticated" && (
+          <p className="text-[11px] text-emerald-400/80">Authenticated</p>
+        )}
+        {lastError && (
+          <p className="text-xs text-red-400 break-words" role="alert">
+            {lastError}
+          </p>
+        )}
+      </div>
     </aside>
   );
 }

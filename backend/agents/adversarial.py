@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from backend.agents.base import AgentState, BaseAgent
 from backend.schemas.models import AgentEvent, Attack, AttackOutput, BlindSpotOutput
+from backend.utils.prompt_context import RED_TEAM_SYSTEM, adversarial_batch_prompt
 
 
 class AdversarialRedTeam(BaseAgent):
@@ -17,21 +18,13 @@ class AdversarialRedTeam(BaseAgent):
         attacks = []
         library = self._load_library()
 
-        if self.config.is_demo():
-            async for event in self._stream_llm(
-                "Generate adversarial attacks for all detected blind spots.",
-                system="You are a red team analyst exploiting detection gaps.",
-                temperature=0.7,
-            ):
-                yield event
+        async for event in self._stream_llm(
+            adversarial_batch_prompt(payload),
+            system=RED_TEAM_SYSTEM,
+            temperature=0.7,
+        ):
+            yield event
         for bs in payload.blind_spots:
-            if not self.config.is_demo():
-                async for event in self._stream_llm(
-                    f"Generate attack for blind spot: {bs.title}",
-                    system="You are a red team analyst exploiting detection gaps.",
-                    temperature=0.7,
-                ):
-                    yield event
             atk = self._build_attack(bs, library)
             attacks.append(atk)
 

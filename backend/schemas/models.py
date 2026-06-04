@@ -125,6 +125,9 @@ class SourceData(BaseModel):
 
 
 # --- Connector / Integration ---
+DataMode = Literal["demo", "live", "stub", "empty", "disabled"]
+
+
 class ConnectionStatus(BaseModel):
     source_type: SourceType
     state: ConnectionState = "disconnected"
@@ -132,6 +135,8 @@ class ConnectionStatus(BaseModel):
     freshness_seconds: Optional[float] = None
     message: Optional[str] = None
     warning: Optional[str] = None
+    data_mode: Optional[DataMode] = None
+    live_vendor: Optional[str] = None
 
 
 class ConnectorConfig(BaseModel):
@@ -197,8 +202,10 @@ class AttackOutput(BaseModel):
 
 class FailureRecord(BaseModel):
     id: str
+    title: str = ""
     description: str
     source_ids: List[str] = Field(default_factory=list)
+    affected_entities: List[str] = Field(default_factory=list)
     dollar_loss: Optional[float] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     resolved: bool = False
@@ -296,9 +303,111 @@ class NexusReport(BaseModel):
     pipeline_state: PipelineState = "COMPLETE"
 
 
+RiskReviewDataMode = Literal["synthetic", "live", "mixed"]
+LaunchVerdict = Literal["not_ready", "demo_ready", "pilot_ready", "beta_ready", "production_ready"]
+DeploymentMode = Literal["demo", "pre_live", "staging", "production"]
+LLMMode = Literal["canned", "live", "unconfigured"]
+
+
+class RiskReviewFinding(BaseModel):
+    id: str
+    title: str
+    severity: Severity
+    description: str
+    adversarial_passed: bool = True
+    related_loss_title: Optional[str] = None
+    recommendation: Optional[str] = None
+
+
+class RiskReviewSummary(BaseModel):
+    review_id: str
+    correlation_id: Optional[str] = None
+    status: Literal["complete", "error"] = "complete"
+    blind_spots_count: int = 0
+    decisions_count: int = 0
+    critical_count: int = 0
+    high_count: int = 0
+    top_recommendation: str = ""
+    workflow: str = "pre_release_risk_review"
+    data_mode: RiskReviewDataMode = "synthetic"
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class RiskReviewReport(BaseModel):
+    summary: RiskReviewSummary
+    findings: List[RiskReviewFinding] = Field(default_factory=list)
+    decisions: List[DecisionOutput] = Field(default_factory=list)
+    audit_correlation_id: Optional[str] = None
+
+
+class PlatformInfo(BaseModel):
+    product_name: str = "Nexus AI"
+    product_wedge: str = "Pre-Release Risk Review"
+    icp: str = ""
+    deployment_mode: DeploymentMode = "demo"
+    launch_verdict: LaunchVerdict = "demo_ready"
+    uses_demo_pipeline: bool = True
+    llm_mode: LLMMode = "canned"
+    llm_provider: Optional[str] = None
+    auth_mode: str = "jwt_optional"
+    trust_client_role: bool = True
+    connector_capabilities: Dict[str, Dict[str, object]] = Field(default_factory=dict)
+    pilot_blockers: List[str] = Field(default_factory=list)
+
+
+PluginCategory = Literal["revenue", "finance", "banking", "markets", "intelligence", "custom"]
+PluginIntegrationType = Literal["builtin", "webhook", "rest", "sdk"]
+PluginTier = Literal["official", "partner", "community"]
+
+
+class PluginManifest(BaseModel):
+    id: str
+    name: str
+    description: str
+    category: PluginCategory
+    integration_type: PluginIntegrationType
+    tier: PluginTier = "official"
+    vendor: str
+    version: str = "1.0.0"
+    source_type: Optional[str] = None
+    supports_webhook: bool = False
+    live_vendor: Optional[str] = None
+    docs_url: Optional[str] = None
+    setup_steps: List[str] = Field(default_factory=list)
+    required_env: List[str] = Field(default_factory=list)
+    icon: str = "plug"
+    installed: bool = False
+    connection_state: Optional[str] = None
+    data_mode: Optional[DataMode] = None
+
+
+class PluginRegistrationRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    description: str = Field(min_length=10, max_length=500)
+    category: PluginCategory = "custom"
+    integration_type: Literal["webhook", "rest"] = "webhook"
+    vendor: str = Field(min_length=2, max_length=60)
+    webhook_source: Optional[str] = Field(default=None, pattern=r"^[a-z][a-z0-9_]{1,24}$")
+    docs_url: Optional[str] = None
+
+
+class PluginCatalogSummary(BaseModel):
+    total: int = 0
+    installed: int = 0
+    official: int = 0
+    community: int = 0
+    categories: List[str] = Field(default_factory=list)
+
+
+class PluginCatalogResponse(BaseModel):
+    plugins: List[PluginManifest] = Field(default_factory=list)
+    summary: PluginCatalogSummary = Field(default_factory=PluginCatalogSummary)
+
+
 # --- Memory ---
 class MemoryMetadata(BaseModel):
     agent_id: str = ""
+    failure_id: Optional[str] = None
     severity: Severity = "medium"
     source_ids: List[str] = Field(default_factory=list)
     source_types: List[str] = Field(default_factory=list)

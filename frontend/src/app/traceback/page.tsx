@@ -1,11 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import { FailureTimeline } from "@/components/traceback/FailureTimeline";
-import { TraceGraph } from "@/components/traceback/TraceGraph";
 import type { GraphEdgeData, GraphNodeData } from "@/types/graph";
-import { getMemoryGraph } from "@/lib/api";
+import { fetchAuthToken, getMemoryGraph } from "@/lib/api";
+
+const TraceGraph = dynamic(
+  () => import("@/components/traceback/TraceGraph").then((mod) => mod.TraceGraph),
+  {
+    ssr: false,
+    loading: () => <p className="text-slate-500 text-sm p-4">Loading graph…</p>,
+  }
+);
 
 export default function TracebackPage() {
   const [nodes, setNodes] = useState<GraphNodeData[]>([]);
@@ -17,7 +25,9 @@ export default function TracebackPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    getMemoryGraph()
+    fetchAuthToken("viewer")
+      .catch(() => undefined)
+      .then(() => getMemoryGraph())
       .then((g) => {
         setNodes((g.nodes || []) as GraphNodeData[]);
         setEdges((g.edges || []) as GraphEdgeData[]);

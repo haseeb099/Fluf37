@@ -12,6 +12,11 @@ from backend.utils.errors import LLMError
 logger = structlog.get_logger()
 
 
+def _is_rate_limit_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return "429" in msg or "rate_limit" in msg or "rate limit" in msg
+
+
 class LLMClient:
     def __init__(self, config: Optional[NexusConfig] = None, audit: Optional[AuditLog] = None):
         self.config = config or get_config()
@@ -25,26 +30,56 @@ class LLMClient:
         max_tokens: int = 2048,
         agent_id: str = "unknown",
     ) -> AsyncIterator[str]:
-        if self.config.is_demo():
-            demo_text = self._demo_response(agent_id, prompt)
-            chunk_size = self.config.max_tokens_per_agent // 50 or 20
-            step = min(40, max(20, chunk_size))
-            for i in range(0, len(demo_text), step):
-                yield demo_text[i : i + step]
-                await asyncio.sleep(0.002)
-            self._audit(agent_id, len(demo_text))
-            return
-
-        if not self.config.llm_configured():
+        if not self.config.uses_live_llm():
+            if self.config.uses_demo_pipeline():
+                demo_text = self._demo_response(agent_id, prompt)
+                chunk_size = self.config.max_tokens_per_agent // 50 or 20
+                step = min(40, max(20, chunk_size))
+                for i in range(0, len(demo_text), step):
+                    yield demo_text[i : i + step]
+                    await asyncio.sleep(0.002)
+                self._audit(agent_id, len(demo_text))
+                return
             raise LLMError(
-                "Live LLM not configured; set API keys or NEXUS_DEMO_MODE=true",
-                model=self.config.primary_model,
+                "Live LLM not configured; set provider API keys and NEXUS_LIVE_LLM=true (demo) "
+                "or NEXUS_DEMO_MODE=false",
+                model=self.config.active_llm_model(),
             )
 
         async for token in self._stream_live(
             prompt, system, temperature, max_tokens, agent_id
         ):
             yield token
+
+    async def _stream_openai_compatible(
+        self,
+        *,
+        api_key: str,
+        base_url: Optional[str],
+        model: str,
+        prompt: str,
+        system: str,
+        temperature: float,
+        max_tokens: int,
+    ) -> AsyncIterator[str]:
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        stream = await client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system or "You are Nexus AI."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True,
+            timeout=self.config.agent_timeout_seconds,
+        )
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content or ""
+            if delta:
+                yield delta
 
     async def _stream_live(
         self,
@@ -54,36 +89,33 @@ class LLMClient:
         max_tokens: int,
         agent_id: str,
     ) -> AsyncIterator[str]:
-        model = self.config.primary_model
+        model = self.config.active_llm_model()
         collected: List[str] = []
         try:
-            if self.config.llm_provider == "openai":
-                from openai import AsyncOpenAI
-
-                client = AsyncOpenAI(api_key=self.config.openai_api_key)
-                stream = await client.chat.completions.create(
-                    model=self.config.fallback_model,
-                    messages=[
-                        {"role": "system", "content": system or "You are Nexus AI."},
-                        {"role": "user", "content": prompt},
-                    ],
+            if self.config.llm_provider in ("openai", "groq"):
+                api_key = (
+                    self.config.groq_api_key
+                    if self.config.llm_provider == "groq"
+                    else self.config.openai_api_key
+                )
+                base_url = self.config.groq_base_url if self.config.llm_provider == "groq" else None
+                async for token in self._stream_openai_compatible(
+                    api_key=api_key,
+                    base_url=base_url,
+                    model=model,
+                    prompt=prompt,
+                    system=system,
                     temperature=temperature,
                     max_tokens=max_tokens,
-                    stream=True,
-                    timeout=self.config.agent_timeout_seconds,
-                )
-                async for chunk in stream:
-                    delta = chunk.choices[0].delta.content or ""
-                    if delta:
-                        collected.append(delta)
-                        yield delta
-                model = self.config.fallback_model
+                ):
+                    collected.append(token)
+                    yield token
             else:
                 from anthropic import AsyncAnthropic
 
                 client = AsyncAnthropic(api_key=self.config.anthropic_api_key)
                 async with client.messages.stream(
-                    model=self.config.primary_model,
+                    model=model,
                     max_tokens=max_tokens,
                     temperature=temperature,
                     system=system or "You are Nexus AI.",
@@ -95,9 +127,29 @@ class LLMClient:
                         yield text
         except Exception as e:
             logger.warning("llm_live_failed", agent_id=agent_id, error=str(e))
+            if self._should_fallback_to_demo(e):
+                async for token in self._stream_demo_fallback(prompt, agent_id):
+                    yield token
+                return
             raise LLMError(str(e), model=model) from e
 
         self._audit(agent_id, sum(len(t) for t in collected), model=model)
+
+    def _should_fallback_to_demo(self, exc: Exception) -> bool:
+        if not self.config.nexus_llm_fallback_on_error:
+            return False
+        if not self.config.uses_demo_pipeline():
+            return False
+        return _is_rate_limit_error(exc)
+
+    async def _stream_demo_fallback(self, prompt: str, agent_id: str) -> AsyncIterator[str]:
+        demo_text = self._demo_response(agent_id, prompt)
+        logger.info("llm_fallback_demo", agent_id=agent_id)
+        step = min(40, max(20, self.config.max_tokens_per_agent // 50 or 20))
+        for i in range(0, len(demo_text), step):
+            yield demo_text[i : i + step]
+            await asyncio.sleep(0.002)
+        self._audit(agent_id, len(demo_text), model="demo-fallback")
 
     async def complete(
         self,
@@ -110,6 +162,32 @@ class LLMClient:
         async for token in self.stream(prompt, system, temperature, agent_id=agent_id):
             parts.append(token)
         return "".join(parts)
+
+    async def verify_connectivity(self) -> dict:
+        """Ping the configured provider with a minimal completion (ignores demo/canned mode)."""
+        if not self.config.llm_configured():
+            return {"ok": False, "mode": "unconfigured", "error": "Provider API key not set"}
+        model = self.config.active_llm_model()
+        try:
+            parts: List[str] = []
+            async for token in self._stream_live(
+                "Reply with exactly: Nexus AI connected.",
+                "You are a connectivity probe. Reply briefly.",
+                0,
+                32,
+                "connectivity_probe",
+            ):
+                parts.append(token)
+            text = "".join(parts).strip()
+            return {
+                "ok": bool(text),
+                "mode": "live",
+                "provider": self.config.llm_provider,
+                "model": model,
+                "preview": text[:120],
+            }
+        except LLMError as e:
+            return {"ok": False, "mode": "live", "provider": self.config.llm_provider, "error": str(e)}
 
     def _demo_response(self, agent_id: str, prompt: str) -> str:
         responses = {

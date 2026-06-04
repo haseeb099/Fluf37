@@ -1,34 +1,42 @@
 "use client";
 
-import { AgentGrid } from "@/components/dashboard/AgentGrid";
+import Link from "next/link";
+import { AppShell } from "@/components/layout/AppShell";
+import { FindingsPanel } from "@/components/dashboard/FindingsPanel";
+import { KpiStrip } from "@/components/dashboard/KpiStrip";
+import { PlatformStatusBanner } from "@/components/dashboard/PlatformStatusBanner";
+import { RiskReviewHero } from "@/components/dashboard/RiskReviewHero";
+import { RiskReviewWorkflow } from "@/components/dashboard/RiskReviewWorkflow";
 import { useNexusStore } from "@/store/nexusStore";
 
 export default function DashboardPage() {
   const blindSpots = useNexusStore((s) => s.blindSpots);
-  const pipelineState = useNexusStore((s) => s.pipelineState);
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h2 className="text-2xl font-semibold text-cyan-300">Dashboard</h2>
-        <p className="text-slate-400 text-sm">Pipeline: {pipelineState}</p>
-      </header>
-      <AgentGrid />
-      <section>
-        <h3 className="text-lg mb-3">Blind Spots ({blindSpots.length})</h3>
-        <div className="space-y-2">
-          {blindSpots.map((bs) => (
-            <div key={bs.id} className="glass-panel p-3">
-              <span className="text-xs uppercase text-red-400">{bs.severity}</span>
-              <h4 className="font-medium">{bs.title}</h4>
-              <p className="text-sm text-slate-400">{bs.description}</p>
-            </div>
-          ))}
-          {blindSpots.length === 0 && (
-            <p className="text-slate-500 text-sm">Run pipeline to detect blind spots.</p>
-          )}
+    <AppShell
+      title="Overview"
+      subtitle="Monitor risk signals and run pre-release reviews from one place."
+    >
+      <div className="space-y-6 animate-fade-in">
+        <RiskReviewHero />
+
+        <div className="flex flex-wrap gap-4 text-sm -mt-2">
+          <Link href="/decisions" className="text-sky-400 hover:text-sky-300">
+            View decisions →
+          </Link>
+          <Link href="/integrations" className="text-slate-400 hover:text-slate-300">
+            Manage integrations
+          </Link>
+          <Link href="/agents" className="text-slate-400 hover:text-slate-300">
+            Agent activity →
+          </Link>
         </div>
-      </section>
-    </div>
+
+        <KpiStrip />
+        <PlatformStatusBanner />
+        <RiskReviewWorkflow />
+        <FindingsPanel blindSpots={blindSpots} />
+      </div>
+    </AppShell>
   );
 }

@@ -7,32 +7,22 @@ uvicorn[standard]==0.29.0
 python-multipart==0.0.9
 websockets==12.0
 
-# ── LLM & Agents ───────────────────────────────────────────────
+# ── LLM (direct SDKs; no LangChain in runtime) ───────────────────
 anthropic==0.30.0
 openai==1.35.0
-langchain==0.2.6
-langchain-anthropic==0.1.19
-langchain-openai==0.1.14
-langchain-community==0.2.6
-langchain-chroma==0.1.2
-tiktoken==0.7.0
 
 # ── Data & Schemas ─────────────────────────────────────────────
-pydantic==2.7.4
-pydantic-settings==2.3.3
-numpy==1.26.4
+pydantic>=2.10.0,<3
+pydantic-settings>=2.6.0,<3
 
 # ── Memory ─────────────────────────────────────────────────────
-chromadb==0.5.3
+# ChromaDB: install requirements-vector.txt when not in demo-only mode (see README)
 networkx==3.3
-sentence-transformers==3.0.1  # offline embeddings (no API key needed)
 
 # ── Async & HTTP ───────────────────────────────────────────────
 httpx==0.27.0
 aiofiles==23.2.1
 aiosqlite==0.20.0
-asyncio-mqtt==0.16.2  # optional: for real-time feeds
-
 # ── Logging & Observability ────────────────────────────────────
 structlog==24.2.0
 python-json-logger==2.0.7
@@ -42,11 +32,11 @@ python-dotenv==1.0.1
 tenacity==8.3.0   # retry logic
 cachetools==5.3.3
 python-dateutil==2.9.0
-orjson==3.10.5    # fast JSON serialization
+orjson>=3.10.7    # fast JSON serialization (wheels for Python 3.13)
 
 # ── Security ───────────────────────────────────────────────────
 python-jose[cryptography]==3.3.0  # JWT
-passlib[bcrypt]==1.7.4
+# passlib reserved for future password auth (not used in v0.9)
 slowapi==0.1.9    # rate limiting
 
 # ── Testing ────────────────────────────────────────────────────
