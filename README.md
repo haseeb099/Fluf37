@@ -5,9 +5,29 @@
 [![CI](https://github.com/haseeb099/Fluf37/actions/workflows/ci.yml/badge.svg)](https://github.com/haseeb099/Fluf37/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Launch status:** **Pilot ready** (open core v0.9) for design partners on **Pre-Release Risk Review** with synthetic data. Not production SaaS yet — see [What ships today](#what-ships-today).
+**Move 37 submission** · **Pilot ready** (open core v0.9) · Demo runs in under 2 minutes — no API keys required.
 
-**Who it's for:** Mid-market CFO offices ($50M–$300M revenue) that approve vendor wires and credit weekly and need explainable cross-source risk review, not another chatbot on top of siloed dashboards.
+---
+
+## For judges and investors (read this first)
+
+Finance teams don't just need more data — they need **better decisions they can trust**. Fluf37 connects the systems that matter most — CRM, ERP, banking, trading, and news — and turns them into **one auditable intelligence layer**.
+
+It does not stop at summarizing information. It **finds blind spots**, **stress-tests them adversarially**, **traces the decision path through memory**, and **learns from outcomes over time**. That means your team can spot hidden exposure earlier, understand why a risk matters, and defend every decision with a clear audit trail.
+
+If you need a product that helps your finance operation move faster without losing control, **Fluf37 is built for that**.
+
+| What judges should see | Where |
+|----------------------|--------|
+| One-click risk review (six-agent pipeline, live WebSocket) | http://localhost:3000 → **Run risk review** |
+| Cross-source findings + severity | Dashboard findings panel after **COMPLETE** |
+| Adversarial + traceback proof | `/traceback` — named failures → loss paths |
+| Auditability | Export JSON on dashboard · `GET /api/v1/audit/verify` |
+| Honest readiness | [What ships today](#what-ships-today) — demo data labeled clearly |
+
+**2-minute demo path:** Clone → quick start below → **Run risk review** → scroll findings → **Export review (JSON)** → open **Traceback** and **Decisions**.
+
+**Who it's for:** Mid-market CFO offices ($50M–$300M revenue) approving vendor wires and credit weekly — and any team that needs explainable cross-source risk review, not another dashboard chatbot.
 
 **Deep dives:** [CTO handoff](docs/CTO_HANDOFF.md) · [Market strategy](docs/MARKET_READY.md) · [Launch readiness](docs/launch-readiness.md)
 
@@ -17,7 +37,23 @@
 
 Finance teams run on disconnected systems. CRM says one thing; ERP, banking, and trading say another. Generic copilots summarize each silo in isolation. Dashboards show what you already track — not what you missed.
 
-Fluf37 runs a **fixed six-agent pipeline** over normalized cross-source data. It discovers blind spots, adversarially stress-tests each one, links current signals to named historical failures, produces structured trade and credit recommendations, and logs the full run for audit replay. The default path is **deterministic demo mode** (seeded synthetic data, no vendor keys) so judges, investors, and engineers can evaluate the product in minutes — with optional live LLM for narrative quality.
+Fluf37 runs a **fixed six-agent pipeline** over normalized cross-source data — not a single chat prompt. It discovers blind spots, adversarially stress-tests each one, links current signals to named historical failures, produces structured trade and credit recommendations, and logs the full run for audit replay.
+
+**For investors:** The wedge is *pre-release risk review before you wire* — a sellable workflow (connect → review → sign-off → audit export) on a technical moat (adversarial pipeline + traceback memory + hash-chained audit). Demo mode is **deterministic** (seeded synthetic data, no vendor keys) so diligence is fast; hybrid live LLM is optional for narrative quality.
+
+**For engineers:** See [Quick start](#quick-start). Default path is demo mode — judges and CI can evaluate in minutes without credentials.
+
+---
+
+## What differentiates Fluf37
+
+| vs. typical copilots / dashboards | Fluf37 |
+|-----------------------------------|--------|
+| Summarize one source at a time | Cross-source blind-spot detection |
+| Answer when asked | Adversarial stress test on every finding |
+| Session memory | Persistent graph + vector traceback |
+| Black-box outputs | Schema-validated events + audit chain |
+| "Trust the model" | Exportable review JSON + `correlation_id` replay |
 
 ---
 
