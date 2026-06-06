@@ -4,12 +4,16 @@
 
 [![CI](https://github.com/haseeb099/Fluf37/actions/workflows/ci.yml/badge.svg)](https://github.com/haseeb099/Fluf37/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 **Move 37 submission** · **Pilot ready** (open core v0.9) · Demo runs in under 2 minutes — no API keys required.
 
 ---
 
-## For judges and investors (read this first)
+## 🌟 Overview
 
 Finance teams don't just need more data — they need **better decisions they can trust**. Fluf37 connects the systems that matter most — CRM, ERP, banking, trading, and news — and turns them into **one auditable intelligence layer**.
 
@@ -33,31 +37,9 @@ If you need a product that helps your finance operation move faster without losi
 
 ---
 
-## Why Fluf37
+## ✨ Features
 
-Finance teams run on disconnected systems. CRM says one thing; ERP, banking, and trading say another. Generic copilots summarize each silo in isolation. Dashboards show what you already track — not what you missed.
-
-Fluf37 runs a **fixed six-agent pipeline** over normalized cross-source data — not a single chat prompt. It discovers blind spots, adversarially stress-tests each one, links current signals to named historical failures, produces structured trade and credit recommendations, and logs the full run for audit replay.
-
-**For investors:** The wedge is *pre-release risk review before you wire* — a sellable workflow (connect → review → sign-off → audit export) on a technical moat (adversarial pipeline + traceback memory + hash-chained audit). Demo mode is **deterministic** (seeded synthetic data, no vendor keys) so diligence is fast; hybrid live LLM is optional for narrative quality.
-
-**For engineers:** See [Quick start](#quick-start). Default path is demo mode — judges and CI can evaluate in minutes without credentials.
-
----
-
-## What differentiates Fluf37
-
-| vs. typical copilots / dashboards | Fluf37 |
-|-----------------------------------|--------|
-| Summarize one source at a time | Cross-source blind-spot detection |
-| Answer when asked | Adversarial stress test on every finding |
-| Session memory | Persistent graph + vector traceback |
-| Black-box outputs | Schema-validated events + audit chain |
-| "Trust the model" | Exportable review JSON + `correlation_id` replay |
-
----
-
-## What it does
+Fluf37 provides a robust set of features designed to empower finance teams with unparalleled insights and control:
 
 | Capability | What you get |
 |------------|--------------|
@@ -74,120 +56,26 @@ Fluf37 runs a **fixed six-agent pipeline** over normalized cross-source data —
 
 ---
 
-## How it works
+## 🛠️ Tech Stack
 
-This is an **orchestrated pipeline**, not a single prompt. Six agents run in sequence; each emits schema-validated `AgentEvent`s over WebSocket and writes to shared memory.
+Fluf37 is built with a modern and scalable tech stack, ensuring high performance, reliability, and maintainability.
 
-```
-IDLE → CONNECTING → ANALYZING → ATTACKING → TRACING → DECIDING → EVOLVING → COMPLETE
-```
+**Backend:**
+*   **Framework:** FastAPI (Python 3.11+)
+*   **Data Validation:** Pydantic v2
+*   **Logging:** Structlog
+*   **Rate Limiting:** SlowAPI
+*   **Memory/Database:** ChromaDB (optional), NetworkX (graph), SQLite
+*   **LLM Integration:** Custom LLMClient supporting Anthropic, OpenAI, Groq
 
-| Agent | Role |
-|-------|------|
-| **Connector** | Syncs five sources into normalized `SourceData` |
-| **Silent Forcing Finder** | Detects blind spots across merged sources |
-| **Adversarial Red Team** | Stress-tests each blind spot (attack library + LLM narrative) |
-| **Traceback** | Vector search + graph paths to prior failures |
-| **Decision** | Trade / credit recommendations; persisted to SQLite |
-| **Evolution** | Proposed weight updates; requires explicit approval |
-
-In demo mode, connectors read seeded JSON from `data/demo/`. With `NEXUS_LIVE_LLM=true`, adversarial and traceback agents can call Anthropic, OpenAI, or Groq while still running on synthetic data.
-
-Detail: [agents.md](docs/agents.md) · [architecture.md](docs/architecture.md)
+**Frontend:**
+*   **Framework:** Next.js App Router
+*   **Language:** TypeScript
+*   **State Management:** Zustand
 
 ---
 
-## What ships today
-
-Honest inventory. If this table disagrees with marketing copy, **the code wins**.
-
-| Capability | Status | Notes |
-|------------|--------|-------|
-| Six-agent pipeline + WebSocket streaming | **Shipped** | Demo/pre-live synthetic data |
-| Pre-Release Risk Review API | **Shipped** | `POST /api/v1/risk-review/run` |
-| Business dashboard (hero CTA, KPIs, findings, export) | **Shipped** | `/` |
-| Integrations hub + plugin catalog API | **Shipped** | `/integrations` |
-| Traceback graph + timeline | **Shipped** | Named failure nodes |
-| Decisions + outcome feedback | **Shipped** | `/decisions` |
-| REST API + OpenAPI | **Shipped** | `/docs` |
-| Demo synthetic data generator | **Shipped** | Seed 42, deterministic |
-| Memory (vector + graph + SQLite) | **Shipped** | In-memory vector fallback without Chroma |
-| Hash-chained audit log | **Shipped** | Verify + export endpoints |
-| API key + JWT + RBAC + pre-live mode | **Shipped** | `correlation_id` on pipeline runs |
-| Hybrid demo data + live LLM | **Shipped** | Groq / Anthropic / OpenAI via `NEXUS_LIVE_LLM` |
-| LLM fallback on rate limits | **Shipped** | Canned narrative in demo/pre-live |
-| HMAC webhook ingest | **Shipped** | Enforced when demo mode off |
-| Connector `data_mode` truth API | **Shipped** | Shows demo vs live per source |
-| Live Plaid / Alpaca | **Stub** | Paths exist; empty without credentials |
-| Live CRM / ERP / news vendors | **Missing** | Demo JSON only today |
-| Connector runtime plugin loader | **Planned** | Catalog API shipped; dynamic loading not yet |
-| Multi-tenant DB isolation | **Missing** | Header-scoped orchestrators share memory |
-| Prometheus / OpenTelemetry | **Planned** | Placeholder in `backend/observability/` |
-| Evolution approval UI | **Planned** | API exists; no dashboard approval flow |
-| SSO / SOC2 | **Missing** | Roadmap |
-
-Full matrix: [CTO_HANDOFF.md](docs/CTO_HANDOFF.md) §2 · [launch-readiness.md](docs/launch-readiness.md)
-
-| Stage | Ready? |
-|-------|--------|
-| Design pilot (synthetic / webhook) | **Yes** |
-| Paid pilot | **Conditional** — rotate secrets, pre-live auth profile |
-| Beta (live bank) | **No** |
-| Production SaaS | **No** |
-
----
-
-## Architecture
-
-```mermaid
-flowchart TB
-  subgraph sources [Data sources]
-    CRM[CRM]
-    ERP[ERP]
-    Bank[Bank]
-    Trade[Trading]
-    News[News]
-    WH[Webhook ingest]
-  end
-
-  subgraph pipeline [Six-agent pipeline]
-    CA[Connector]
-    SF[Silent Forcing Finder]
-    AR[Adversarial Red Team]
-    TB[Traceback]
-    DA[Decision]
-    EV[Evolution]
-  end
-
-  subgraph memory [Memory layer]
-    VEC[(Vector)]
-    GRA[(Graph)]
-    SQL[(SQLite)]
-    AUD[(Audit JSONL)]
-  end
-
-  subgraph clients [Clients]
-    UI[Next.js dashboard]
-    REST[REST API]
-    WS[WebSocket stream]
-  end
-
-  sources --> CA
-  CA --> SF --> AR --> TB --> DA --> EV
-  CA & SF & AR & TB & DA & EV --> memory
-  UI & REST & WS --> pipeline
-```
-
-| Layer | Stack |
-|-------|-------|
-| API | FastAPI, Python 3.11+, Pydantic v2 |
-| Frontend | Next.js App Router, TypeScript, Zustand |
-| Memory | ChromaDB (optional) or in-memory vector; NetworkX graph; SQLite |
-| Streaming | WebSocket `RUN_PIPELINE` → structured `AgentEvent`s |
-
----
-
-## Quick start
+## 🚀 Getting Started
 
 **Prerequisites:** Python **3.11 or 3.12** (recommended; 3.13 works with demo-only `requirements.txt`), Node **20+**.
 
@@ -268,59 +156,63 @@ curl -s -X POST http://localhost:8000/api/v1/nexus/run/demo \
 
 ---
 
-## Configuration
+## 🏗️ Architecture
 
-Essential variables only. Full reference: [configuration.md](docs/configuration.md) · pilot profile: [pilot.env.example](docs/pilot.env.example)
+Fluf37 operates on an **orchestrated pipeline** of six agents, designed for robust and auditable decision-making. Each agent runs in sequence, emitting schema-validated `AgentEvent`s over WebSocket and writing to shared memory.
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `NEXUS_DEMO_MODE` | `true` | Synthetic data + canned LLM |
-| `NEXUS_PRE_LIVE_MODE` | `false` | Synthetic pipeline + production-like RBAC |
-| `NEXUS_LIVE_LLM` | `false` | Live provider on demo/pre-live data |
-| `NEXUS_LLM_FALLBACK_ON_ERROR` | `true` | Canned narrative on 429 in demo/pre-live |
-| `LLM_PROVIDER` | `groq` | `anthropic` · `openai` · `groq` |
-| `NEXUS_API_KEY` | `demo-key` | `X-Nexus-Key` header |
-| `AUTH_MODE` | `jwt_optional` | Use `jwt_required` in staging/prod |
-| `NEXUS_WS_REQUIRE_AUTH` | `false` | Require JWT on WebSocket |
-| `NEXT_PUBLIC_API_URL` | — | Frontend → backend (must match port) |
+```mermaid
+flowchart TB
+  subgraph sources [Data sources]
+    CRM[CRM]
+    ERP[ERP]
+    Bank[Bank]
+    Trade[Trading]
+    News[News]
+    WH[Webhook ingest]
+  end
 
-Optional: `pip install -r requirements-vector.txt` for ChromaDB on Python 3.11–3.12.
+  subgraph pipeline [Six-agent pipeline]
+    CA[Connector]
+    SF[Silent Forcing Finder]
+    AR[Adversarial Red Team]
+    TB[Traceback]
+    DA[Decision]
+    EV[Evolution]
+  end
+
+  subgraph memory [Memory layer]
+    VEC[(Vector)]
+    GRA[(Graph)]
+    SQL[(SQLite)]
+    AUD[(Audit JSONL)]
+  end
+
+  subgraph clients [Clients]
+    UI[Next.js dashboard]
+    REST[REST API]
+    WS[WebSocket stream]
+  end
+
+  sources --> CA
+  CA --> SF --> AR --> TB --> DA --> EV
+  CA & SF & AR & TB & DA & EV --> memory
+  UI & REST & WS --> pipeline
+```
+
+| Agent | Role |
+|-------|------|
+| **Connector** | Syncs five sources into normalized `SourceData` |
+| **Silent Forcing Finder** | Detects blind spots across merged sources |
+| **Adversarial Red Team** | Stress-tests each blind spot (attack library + LLM narrative) |
+| **Traceback** | Vector search + graph paths to prior failures |
+| **Decision** | Trade / credit recommendations; persisted to SQLite |
+| **Evolution** | Proposed weight updates; requires explicit approval |
 
 ---
 
-## API and UI
+## 🔒 Security and Trust
 
-### Main API routes
-
-| Method | Path | Role | Purpose |
-|--------|------|------|---------|
-| POST | `/api/v1/risk-review/run` | analyst | Buyer-facing risk review report |
-| POST | `/api/v1/nexus/run/demo` | analyst | Run full pipeline (REST) |
-| POST | `/api/v1/connect/{source}` | admin | Connect source |
-| POST | `/api/v1/connect/{source}/sync` | analyst | Sync connector |
-| GET | `/api/v1/connectors` | authenticated | Per-source `data_mode` |
-| GET | `/api/v1/plugins` | authenticated | Plugin catalog |
-| GET | `/api/v1/memory/graph` | authenticated | Traceback graph data |
-| GET | `/api/v1/audit/verify` | authenticated | Hash chain integrity |
-| POST | `/api/v1/auth/token` | — | Issue JWT |
-| WS | `/ws/nexus/stream` | optional JWT | `RUN_PIPELINE` + event stream |
-
-Full reference: [api-overview.md](docs/api-overview.md)
-
-### Dashboard routes
-
-| Route | Purpose |
-|-------|---------|
-| `/` | **Risk review** — hero CTA, first-run checklist, KPIs, findings, JSON export |
-| `/integrations` | Plugin hub and source connect (`/connections` redirects here) |
-| `/traceback` | Failure → loss paths + timeline |
-| `/decisions` | Recommendations and outcome feedback |
-| `/agents` | Agent transcript — **advanced only** (`NEXT_PUBLIC_SHOW_ADVANCED=true`) |
-| `/evolution` | Weight proposals — **advanced only** |
-
----
-
-## Security and trust
+Fluf37 is designed with security and auditability at its core, providing transparency and control over financial risk reviews.
 
 | Control | Status |
 |---------|--------|
@@ -331,74 +223,35 @@ Full reference: [api-overview.md](docs/api-overview.md)
 | Pipeline `correlation_id` | Shipped |
 | Rate limiting (SlowAPI) | Shipped |
 
-**Not production-ready yet**
-
-- No row-level tenant isolation — orchestrators share memory paths today
-- Do **not** trust browser `X-Nexus-Role` in production; set JWT roles at the gateway
-- Default secrets in `.env.example` must be rotated before any paid pilot
-- No load/pen test characterization for concurrent WebSocket pipelines
-- `SECURITY.md` contact email is a placeholder
+**Important Security Notes:**
+*   No row-level tenant isolation; orchestrators currently share memory paths.
+*   Do **not** trust browser `X-Nexus-Role` in production; set JWT roles at the gateway.
+*   Default secrets in `.env.example` must be rotated before any paid pilot.
+*   No load/penetration test characterization for concurrent WebSocket pipelines.
+*   `SECURITY.md` contact email is a placeholder.
 
 Before customer deploy: `python scripts/verify_setup.py --pilot` with [pilot.env.example](docs/pilot.env.example).
 
-Detail: [security-compliance.md](docs/security-compliance.md) · [SECURITY.md](SECURITY.md)
+Detail: [security-compliance.md](docs/security-compliance.md)
 
 ---
 
-## Roadmap
+## 🤝 Contributing
 
-### Pilot (now → 8 weeks)
-
-- Design partners on synthetic / HMAC webhook data
-- Pre-live auth dress rehearsal (`NEXUS_PRE_LIVE_MODE`, JWT required)
-- Dedicated single-tenant deploy; audit export for champion replay
-
-### Beta
-
-- One live vertical validated end-to-end (e.g. Plaid sandbox + demo off)
-- Evolution approval UI
-- OpenTelemetry on pipeline states
-- One read-only CRM or ERP connector
-
-### Production
-
-- Tenant-isolated Postgres + pgvector
-- Connector runtime plugin loader
-- SSO (OIDC), SOC2-friendly audit sink
-- External alerting (currently stub in `backend/services/alerting.py`)
-
-Full roadmap: [roadmap.md](docs/roadmap.md) · GTM: [GTM_LAUNCH.md](docs/GTM_LAUNCH.md) · Pricing: [PRICING.md](docs/PRICING.md)
+We welcome contributions to Fluf37! Please see `CONTRIBUTING.md` for guidelines on how to get started.
 
 ---
 
-## Testing and CI
+## 📄 License
 
-```bash
-pytest tests/ -q
-ruff check backend tests
-cd frontend && npm run type-check && npm run lint && npm run build
-```
-
-CI: [.github/workflows/ci.yml](.github/workflows/ci.yml)
-
-Demo QA script: [demo_checklist.md](docs/demo_checklist.md)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## Deployment
+## 📞 Contact
 
-```bash
-docker compose up --build
-```
-
-Production checklist: [deployment.md](docs/deployment.md)
+For any inquiries or support, please reach out to Muhammad Haseeb Rafique.
 
 ---
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Keep demo mode stable; label stubbed features honestly in docs.
-
-## License
-
-MIT — [LICENSE](LICENSE)
+*Built with 💖 by Muhammad Haseeb Rafique*
