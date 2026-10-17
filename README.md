@@ -82,7 +82,7 @@ Fluf37 is built with a modern and scalable tech stack, ensuring high performance
 ### Windows
 
 ```powershell
-cd e:\Fluf37   # or your clone path
+cd path\to\Fluf37   # the folder you cloned into
 
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 python -m venv venv
@@ -250,7 +250,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-For any inquiries or support, please reach out to Muhammad Haseeb Rafique.
+- 💼 LinkedIn: [linkedin.com/in/haseeb-rafique-ab6532171](https://www.linkedin.com/in/haseeb-rafique-ab6532171/)
+- 🔐 Security issues: see [SECURITY.md](SECURITY.md). Please don't open public issues for vulnerabilities.
 
 ---
 
